@@ -3,7 +3,12 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const users = require('./routes/userRoutes');
-
+const subjects = require('./routes/subjectRoutes');
+const teachers = require('./routes/teacherRoutes');
+const classes = require('./routes/classRoutes');
+const timetables = require('./routes/timetableRoutes');
+const students = require('./routes/studentRoutes');
+const notifications = require('./routes/notificationRoutes');
 // Load environment variables
 dotenv.config();
 
@@ -20,12 +25,14 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.error('MongoDB connection error:', err));
 
-// Routes (to be implemented)
-
-app.use('/api/users',users );
-// app.use('/api/students', require('./routes/students'));
-// app.use('/api/teachers', require('./routes/teachers'));
-// a
+// Routes
+app.use('/api/users', users);
+app.use('/api/subjects', subjects);
+app.use('/api/teachers', teachers);
+app.use('/api/classes', classes);
+app.use('/api/timetables', timetables);
+app.use('/api/students', students);
+app.use('/api/notifications', notifications);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

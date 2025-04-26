@@ -12,7 +12,7 @@ const generateToken = (id) => {
 // Register User
 exports.register = async (req, res) => {
     try {
-        const { firstName, lastName, email, password, role } = req.body;
+        const { firstName, lastName, email, password} = req.body;
         if(!firstName || !lastName || !email || !password ){
             return res.status(400).json({
                 status: 'error',
@@ -21,7 +21,7 @@ exports.register = async (req, res) => {
         }
 
         // Set default role as 'student' if not provided
-        const userRole = role || 'student';
+      
 
         //  Check if user already exists
         const userExists = await User.findOne({ email });
@@ -38,7 +38,7 @@ exports.register = async (req, res) => {
             lastName,
             email,
             password,
-            role: userRole
+            role: 'student'
         });
 
         // Generate token

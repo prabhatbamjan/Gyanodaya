@@ -3,8 +3,9 @@ const bcrypt = require('bcryptjs');
 
 // User Schema Definition
 const userSchema = new mongoose.Schema({
-    parentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    parentId: { type: String },
+    studentId: { type: String },
+    teacherId: { type: String },
     firstName: { type: String, required: [true, 'First name is required'] },
     lastName: { type: String, required: [true, 'Last name is required'] },
     email: { 

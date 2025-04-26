@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { BookOpen, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
+import authAxios from '../utils/auth';
+
 
 function ForgotPassword() {
   const [formData, setFormData] = useState({
@@ -30,7 +31,7 @@ function ForgotPassword() {
     console.log("Sending email:", formData.email); // Debugging
 
     try {
-      await axios.post('http://localhost:5000/api/users/forgotPassword', {
+      await authAxios.post('users/forgotPassword', {
         email: formData.email, // Ensure email is correctly sent
       });
 
@@ -50,7 +51,7 @@ function ForgotPassword() {
     console.log("Verifying code for:", formData.email, "Code:", formData.code); // Debugging
 
     try {
-      await axios.post('http://localhost:5000/api/users/verifyResetCode', {
+      await authAxios.post('users/verifyResetCode', {
         email: formData.email, // Ensure email is sent
         resetCode: formData.code, // Send correct reset code
       });
@@ -71,7 +72,7 @@ function ForgotPassword() {
     console.log("Resetting password for:", formData.email); // Debugging
 
     try {
-      await axios.post('http://localhost:5000/api/users/resetPassword', {
+      await authAxios.post('users/resetPassword', {
         email: formData.email, // Ensure email is sent
         resetCode: formData.code, // Ensure code is included
         newPassword: formData.newPassword, // Send new password

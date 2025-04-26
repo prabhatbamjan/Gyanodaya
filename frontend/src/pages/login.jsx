@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import authAxios from '../utils/auth';
 import { BookOpen, Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -27,20 +27,48 @@ function Login() {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/users/login', {
+      const response = await authAxios.post('users/login', {
         email: formData.email,
         password: formData.password
       });
 
-      // Store the token in localStorage or context
+      // Store the token and user role in localStorage
       localStorage.setItem('authToken', response.data.token);
+      localStorage.setItem('userRole', response.data.data.user.role);
+      localStorage.setItem('userData', JSON.stringify({
+        id: response.data.data.user.id,
+        firstName: response.data.data.user.firstName,
+        lastName: response.data.data.user.lastName,
+        email: response.data.data.user.email,
+        role: response.data.data.user.role
+      }));
       
-      // Redirect to dashboard or home page
-      navigate('/dashboard');
+      // Redirect based on user role
+      navigateByRole(response.data.data.user.role);
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Navigate to appropriate dashboard based on role
+  const navigateByRole = (role) => {
+    switch(role) {
+      case 'admin':
+        navigate('/admin-dashboard');
+        break;
+      case 'teacher':
+        navigate('/teacher-dashboard');
+        break;
+      case 'student':
+        navigate('/student-dashboard');
+        break;
+      case 'parent':
+        navigate('/parent-dashboard');
+        break;
+      default:
+        navigate('/ ');
     }
   };
 

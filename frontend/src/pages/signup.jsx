@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import authAxios from '../utils/auth';
 import { BookOpen, Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -29,7 +29,7 @@ function Signup() {
     setError('');
 
     try {
-      await axios.post('http://localhost:5000/api/users/register', {
+        await authAxios.post('users/register', {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
