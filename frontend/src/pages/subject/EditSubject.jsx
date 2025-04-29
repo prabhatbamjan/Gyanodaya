@@ -69,7 +69,9 @@ const EditSubject = () => {
     if (!subjectData.code.trim()) {
       errors.code = "Subject code is required";
     }
-    
+    if(!subjectData.code.trim().match(/^[A-Z]{3}\d{3}$/)){
+      errors.code = "Invalid subject code format. Please use the format 'ABC123'";
+    }
     if (!subjectData.name.trim()) {
       errors.name = "Subject name is required";
     }

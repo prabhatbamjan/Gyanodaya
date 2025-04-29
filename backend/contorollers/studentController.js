@@ -45,6 +45,13 @@ exports.createStudent = async (req, res) => {
         message: 'Class not found'
       });
     }
+    const checkcapticity=classObj.students.length;
+    if(checkcapticity>=classObj.capacity){
+      return res.status(400).json({
+        status: 'error',
+        message: 'Class is full'
+      });
+    } 
 
     // ✅ Create Parent First
     const parent = await Parent.create({
@@ -99,24 +106,27 @@ exports.createStudent = async (req, res) => {
       password: 'Password@1234',
       role: 'parent'
     });
+    const addstudnet=await Class.findById(classId);
+    addstudnet.students.push(student._id);
+    await addstudnet.save();
     const recipients = [     
-      student.email, 
-      parent.email
+      student, 
+      parent
     ];
   
     try {
-      for (let email of recipients) {
+      for (let person of recipients) {
         await sendEmail({
-          email: email,
+          email: person.email,
           subject: 'Your Login Credentials for Gyanodaya',
           message: `
-            Dear ${recipients.firstName} ${recipients.lastName},
+            Dear ${person.firstName} ${person.lastName},
   
             Greetings from Gyanodaya!
   
             Here are your login credentials for accessing the student portal:
   
-            Email: ${recipients.email}
+            Email: ${person.email}
             Password: Password@1234
   
             You can change your password after logging in for the first time. Please make sure to keep this information confidential and secure.
@@ -128,6 +138,17 @@ exports.createStudent = async (req, res) => {
           `
         });
       }
+      res.status(201).json({
+        status: 'success',
+        data: {
+          id: student._id,
+          name: `${firstName} ${lastName}`,
+          email: student.email,
+          classId: student.class,
+          status: student.status || 'active',
+          profileImg: student.profileImg || null
+        }
+      });
     } catch (error) {
       console.error('Error sending email:', error);
     } 
@@ -136,17 +157,7 @@ exports.createStudent = async (req, res) => {
      
   
 
-    res.status(201).json({
-      status: 'success',
-      data: {
-        id: student._id,
-        name: `${firstName} ${lastName}`,
-        email: student.email,
-        classId: student.class,
-        status: student.status || 'active',
-        profileImg: student.profileImg || null
-      }
-    });
+   
 
   } catch (error) {
     res.status(400).json({
@@ -241,49 +252,52 @@ exports.updateStudent = async (req, res) => {
 // @access  Private (Admin only)
 exports.deleteStudent = async (req, res) => {
   try {
-      const { studentId } = req.params;
+    const { id } = req.params;
+    console.log("Deleting student with ID:", id);
 
-      const student = await Student.findById(studentId);
-      if (!student) {
-          return res.status(404).json({
-              status: 'error',
-              message: 'Student not found'
-          });
-      }
-
-      // Remove student user
-      await User.findByIdAndDelete(student._id);
-
-      // Remove student from parent's children
-      if (student.parent) {
-          const parent = await Parent.findByIdAndUpdate(
-              student.parent,
-              { $pull: { children: student._id } },
-              { new: true }
-          );
-
-          // If no more children, delete parent and parent user
-          if (parent && parent.children.length === 0) {
-              await User.findByIdAndDelete(parent._id);
-              await Parent.findByIdAndDelete(parent._id);
-          }
-      }
-
-      // Finally, delete the student
-      await Student.findByIdAndDelete(student._id);
-
-      res.status(200).json({
-          status: 'success',
-          message: 'Student and related records deleted successfully'
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Student not found'
       });
+    }
+
+    // Delete user associated with student
+    await User.findByIdAndDelete(id);
+
+    // Remove student reference from parent's children
+    if (student.parent) {
+      const parent = await Parent.findByIdAndUpdate(
+        student.parent,
+        { $pull: { children: id } },
+        { new: true }
+      );
+
+      // Delete parent and its user account if no children remain
+      if (parent && (!parent.children || parent.children.length === 0)) {
+        await User.findByIdAndDelete(parent._id);
+        await Parent.findByIdAndDelete(parent._id);
+      }
+    }
+
+    // Delete student record
+    await Student.findByIdAndDelete(id);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Student and related records deleted successfully'
+    });
 
   } catch (error) {
-      res.status(500).json({
-          status: 'error',
-          message: error.message
-      });
+    console.error("Error deleting student:", error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
   }
 };
+
 
 
 // @desc    Get all students (for admin)

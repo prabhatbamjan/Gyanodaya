@@ -29,6 +29,7 @@ const Students = () => {
         console.log(response.data.data);
         const response2=await authAxios.get('classes/');
         if(response2.status === 200){
+          console.log(response2.data.data);
           setClasses(response2.data.data);
         }
       
@@ -65,9 +66,13 @@ const Students = () => {
   const handleDeleteStudent = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
       try {
-        // In production: await axios.delete(`/api/students/${id}`);
-        setStudents(students.filter(student => student._id !== id));
-        setTotalStudents(totalStudents - 1);
+        const response = await authAxios.delete(`students/${id}`);
+        if(response.status === 200){
+          setStudents(students.filter(student => student._id !== id));
+          setTotalStudents(totalStudents - 1);
+          alert('Student deleted successfully');
+        }
+      
         alert('Student deleted successfully');
       } catch (err) {
         setError('Failed to delete student. Please try again.');
@@ -147,8 +152,8 @@ const Students = () => {
                           {student.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {"Class " + student.class.name + " " + student.class.section}
-                        </td>
+  {student.class ? `Class ${student.class.name} ${student.class.section}` : 'No class assigned'}
+</td>
                         
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-3">

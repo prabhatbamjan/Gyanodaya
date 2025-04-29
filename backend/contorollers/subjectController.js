@@ -136,6 +136,16 @@ exports.deleteSubject = async (req, res) => {
                 message: 'Subject not found'
             });
         }
+        const removedFromTimetables = await Timetable.findByIdAndDelete(req.params.id);
+        const removedFromTeachers = await Teacher.findByIdAndDelete(req.params.id);
+
+      if(removedFromTimetables || removedFromTeachers){
+        return res.status(400).json({
+            success: false,
+            message: 'Subject is currently assigned to timetables or teachers'
+        });
+      }
+        
 
         res.status(200).json({
             success: true,

@@ -28,11 +28,23 @@ import AddTimetable from './pages/timetable/addTimeTable';
 import ViewTimetable from './pages/timetable/ViewTimetable';
 import EditTimetable from './pages/timetable/editTimetable';
 import Profile from './pages/Profile';
-import AcademicCalendar from './pages/academics/AcademicCalendar';
-import AddCalendarEvent from './pages/academics/AddCalendarEvent';
-import CalendarEventDetail from './pages/academics/CalendarEventDetail';
 import Notifications from './pages/notifications/notification';
 import AddNotification from './pages/notifications/addNotification';
+import Attendance from './pages/attendance/AttendancePage';
+import AddAttendance from './pages/attendance/MarkAttendance';
+import ViewAttendance from './pages/attendance/AttendanceReport';
+import EditAttendance from './pages/attendance/EditAttendance';
+import Event from './pages/events/EventsPage';
+import AddEvent from './pages/events/AddEvent';
+import EditEvent from './pages/events/EditEvent';
+// import Order from './pages/orders/OrdersPage';
+// import AddOrder from './pages/orders/AddOrder';
+// import EditOrder from './pages/orders/EditOrder';
+import Product from './pages/products/ProductsPage';
+import Addproduct from './pages/products/AddProduct'
+import Editproduct from './pages/products/EditProduct'
+
+
 import Assignment from './pages/AssignmentManagement/AssignmentManagement';
 import AddAssignment from './pages/AssignmentManagement/AssignmentForm';
 import AssignmentGrading from './pages/AssignmentManagement/AssignmentGrading';
@@ -168,14 +180,23 @@ export default function LandingPage() {
             </ProtectedRoute>
             
           } />
-          <Route path="/academics/calendar" element={<ProtectedRoute element={<AcademicCalendar />} allowedRoles={['admin', 'teacher', 'student', 'parent']} />} />
-          <Route path="/academics/calendar/add" element={<ProtectedRoute element={<AddCalendarEvent />} allowedRoles={['admin', 'teacher']} />} />
-
-          <Route path="/academics/calendar/:id" element={<ProtectedRoute element={<CalendarEventDetail />} allowedRoles={['admin', 'teacher', 'student', 'parent']} />} />
-         
+          <Route path="/admin-events" element={<Event/>} />
+          <Route path="/admin-events/add" element={<AddEvent/>} />
+          <Route path="/admin-events/edit/:id" element={<EditEvent/>} />
          {/* notification */}
          <Route path="/notifications" element={<Notifications/>} />
          <Route path="/notifications-add" element={<AddNotification />} />
+         <Route path="/product" element={<Product/>} />
+         <Route path="/addProduct" element={<Addproduct />} />
+         <Route path="/editeProduct/:id" element={<Editproduct/>} />
+         
+    
+
+         {/* attendance */}
+         <Route path="/attendance" element={<Attendance/>} />
+         <Route path="/attendance/add" element={<AddAttendance />} />
+         <Route path="/attendance/view/:id" element={<ViewAttendance />} />
+         <Route path="/attendance/edit/:id" element={<EditAttendance />} />
 
          {/* teacher */}
          <Route path="/teacher-dashboard" element={<TeacherDashboard/>} />

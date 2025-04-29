@@ -112,13 +112,25 @@ const AddStudent = () => {
         setError('First name is required');
         return false;
     }
+    if(!formData.firstName.trim().match(/^[A-Za-z\s']{2,}$/)){
+      setError('First name must contain only letters');
+      return false;
+    }
     if (!formData.lastName.trim()) {
         setError('Last name is required');
         return false;
     }
+    if(!formData.lastName.trim().match(/^[A-Za-z\s']{1,}$/)){
+      setError('Last name must contain only letters');
+      return false;
+    }
     if (!formData.email.trim()) {
         setError('Email is required');
         return false;
+    }
+    if (!formData.email.trim().match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+      setError('Invalid email format');
+      return false;
     }
    
     if (!formData.gender) {
@@ -176,12 +188,24 @@ const AddStudent = () => {
     setError('Parent first name is required');
     return false;
   }
+  if(!formData.parentfirstName.trim().match(/^[A-Za-z\s']{2,}$/)){
+    setError('Parent first name must contain only letters');
+    return false;
+  }
   if(!formData.parentlastName.trim()){
     setError('Parent last name is required');
     return false;
   }
+  if(!formData.parentlastName.trim().match(/^[A-Za-z\s']{1,}$/)){
+    setError('Parent last name must contain only letters');
+    return false;
+  }
   if(!formData.parentemail.trim()){
     setError('Parent email is required');
+    return false;
+  }
+  if (!formData.parentemail.trim().match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+    setError('Invalid email format');
     return false;
   }
   if(!formData.parentoccupation.trim()){
@@ -192,12 +216,7 @@ const AddStudent = () => {
   const admissionDate = new Date(formData.admissionDate);
   const currentDate = new Date();
 
-  // Basic validation checks
-  if (!formData.firstName.trim()) {
-    setError('First name is required');
-    return false;
-  }
-  // ... (keep your other existing validations)
+ 
 
   // Date validation
   if (!formData.dob) {

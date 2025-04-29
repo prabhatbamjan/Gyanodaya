@@ -47,6 +47,10 @@ const AddSubject = () => {
       setError("Subject code is required");
       return;
     }
+    if(!subjectData.code.trim().match(/^[A-Z]{3}\d{3}$/)){
+      setError("Invalid subject code format. Please use the format 'ABC123'");
+      return;
+    }
     if(!subjectData.name.trim()){
       setError("Subject name is required");
       return;

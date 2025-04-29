@@ -290,41 +290,55 @@ function Layout({ children }) {
                 </Link>
               </li>
               <li>
+                    <Link 
+                      to="/attendance" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/attendance') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Attendance</span>
+                    </Link>
+                  </li>
+              <li>
                 <Link 
-                  to="/admin/events" 
+                  to="/admin-events" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/events') 
+                    isActive('/admin-events') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <Calendar className={`h-5 w-5 mr-3 ${isActive('/admin/events') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Calendar className={`h-5 w-5 mr-3 ${isActive('/admin-events') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Events</span>
                 </Link>
               </li>
               <li>
                 <Link 
-                  to="/admin/orders" 
+                  to="/admin-orders" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/orders') 
+                    isActive('/admin-orders') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <Package className={`h-5 w-5 mr-3 ${isActive('/admin/orders') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Package className={`h-5 w-5 mr-3 ${isActive('/admin-orders') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Orders</span>
                 </Link>
               </li>
               <li>
                 <Link 
-                  to="/admin/shop" 
+                  to="/product" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/shop') 
+                    isActive('/admin-shop') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <ShoppingBag className={`h-5 w-5 mr-3 ${isActive('/admin/shop') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <ShoppingBag className={`h-5 w-5 mr-3 ${isActive('/admin-shop') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>School Shop</span>
                 </Link>
               </li>
@@ -438,6 +452,20 @@ function Layout({ children }) {
                   </li>
                   <li>
                     <Link 
+                      to="/attendance" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/attendance') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Attendance</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
                       to="/admin/events" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
                         isActive('/admin/events') 
@@ -466,7 +494,7 @@ function Layout({ children }) {
                   </li>
                   <li>
                     <Link 
-                      to="/admin/shop" 
+                      to="/product" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
                         isActive('/admin/shop') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 

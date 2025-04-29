@@ -65,6 +65,7 @@ function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {/* Total Students Card */}
+        <Link to="/admin-students">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center">
             <h3 className="text-gray-500 text-sm">Total Students</h3>
@@ -75,6 +76,7 @@ function AdminDashboard() {
             {/* <p className="text-sm text-gray-500 mt-1">12 new this month</p> */}
           </div>
         </div>
+        </Link>
 
         {/* Attendance Rate Card */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -89,16 +91,19 @@ function AdminDashboard() {
         </div>
 
         {/* Active Classes Card */}
+        <Link to="/admin-classes">  
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center">
             <h3 className="text-gray-500 text-sm">Active Classes</h3>
             <BookOpen className="h-6 w-6 text-blue-500" />
           </div>
           <div className="mt-2">
+            
             <p className="text-3xl font-bold text-gray-800">{stats.activeClasses}</p>
             {/* <p className="text-sm text-gray-500 mt-1">3 added this week</p> */}
           </div>
         </div>
+        </Link>
 
         {/* Upcoming Events Card */}
         <div className="bg-white rounded-lg shadow p-6">

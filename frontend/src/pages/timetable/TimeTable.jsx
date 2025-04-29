@@ -22,6 +22,7 @@ const TimeTable = () => {
     try {
       const response = await authAxios.get('timetables');
       if (response.data.success) {
+        console.log(response.data.data);
         setTimetables(response.data.data);
       } else {
         setError('Failed to fetch timetable data');

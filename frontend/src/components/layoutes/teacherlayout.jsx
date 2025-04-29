@@ -238,7 +238,21 @@ function Layout({ children }) {
                   <BookOpen className={`h-5 w-5 mr-3 ${isActive('/admin/classes') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>My Classes</span>
                 </Link>
-              </li>            
+              </li>     
+              <li>
+                    <Link 
+                      to="/attendance" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/attendance') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Attendance</span>
+                    </Link>
+                  </li>       
               <li>
                 <Link 
                   to="/admin-timetable" 

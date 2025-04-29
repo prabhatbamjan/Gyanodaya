@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/layoutes/adminlayout';
 import authAxios from '../../utils/auth';
@@ -16,8 +16,8 @@ function AddTimetable() {
 
   // Initialize with exactly 7 periods
   const [formData, setFormData] = useState({
-    class: '',  // Changed from classId to class to match backend
-    day: 'Sunday',
+    class: '',
+    day: 'Sunday', // Directly initialized to Sunday
     periods: Array(7).fill().map((_, i) => ({
       periodNumber: i + 1,
       startTime: calculatePeriodTime(i).startTime,
@@ -33,10 +33,10 @@ function AddTimetable() {
     const startHour = 8; // School starts at 8:00 AM
     const periodDuration = 45; // Each period is 45 minutes
     const breakDuration = 5; // 5 minutes between periods
-    
+
     const startMinutes = startHour * 60 + periodIndex * (periodDuration + breakDuration);
     const endMinutes = startMinutes + periodDuration;
-    
+
     return {
       startTime: `${Math.floor(startMinutes / 60).toString().padStart(2, '0')}:${(startMinutes % 60).toString().padStart(2, '0')}`,
       endTime: `${Math.floor(endMinutes / 60).toString().padStart(2, '0')}:${(endMinutes % 60).toString().padStart(2, '0')}`
@@ -49,7 +49,7 @@ function AddTimetable() {
         const [classesRes, teachersRes, subjectsRes] = await Promise.all([
           authAxios.get('classes/'),
           authAxios.get('teachers/'),
-          authAxios.get('subjects/'),
+          authAxios.get('subjects/')
         ]);
         setClasses(classesRes.data.data);
         setTeachers(teachersRes.data.data);
@@ -63,12 +63,16 @@ function AddTimetable() {
   }, []);
 
   const handlePeriodChange = (index, field, value) => {
+    setError(null); // Reset error immediately
     const updatedPeriods = [...formData.periods];
     const currentPeriod = updatedPeriods[index];
-    
+    if (!formData.class) {
+      setError('Please select a class');
+      setIsLoading(false);
+      return;
+    }
     if (field === 'teacher') {
-      // Clear subject when teacher changes
-      currentPeriod.subject = '';
+      currentPeriod.subject = ''; // Clear subject when teacher changes
     }
 
     updatedPeriods[index] = {
@@ -76,26 +80,40 @@ function AddTimetable() {
       [field]: value
     };
 
-    // Check for teacher-subject conflicts
     if ((field === 'teacher' || field === 'subject') && value) {
       const teacherId = field === 'teacher' ? value : updatedPeriods[index].teacher;
       const subjectId = field === 'subject' ? value : updatedPeriods[index].subject;
 
       if (teacherId && subjectId) {
-        const isDuplicate = updatedPeriods.some((period, i) => 
+        const isDuplicateTeacherSubject = updatedPeriods.some((period, i) =>
           i !== index &&
-          period.teacher === teacherId && 
+          period.teacher === teacherId &&
           period.subject === subjectId
         );
 
-        if (isDuplicate) {
-          setError('This teacher is already assigned to this subject on this timetable');
+        const isDuplicateSubject = updatedPeriods.some((period, i) =>
+          i !== index &&
+          period.subject === subjectId
+        );
+
+        if (isDuplicateTeacherSubject) {
+          setError('This teacher is already assigned to this subject in another period.');
+          return;
+        }
+
+        if (isDuplicateSubject) {
+          setError('This subject is already assigned to another period.');
           return;
         }
       }
     }
-
-    setError(null);
+    if (field === 'subject') {
+      const selectedClass = classes.find(c => c._id === formData.class);
+      if (selectedClass && !selectedClass.subjects.includes(value)) {
+        setError('Selected subject is not available for this class.');
+        return;
+      }
+    }
     setFormData(prev => ({
       ...prev,
       periods: updatedPeriods
@@ -115,14 +133,8 @@ function AddTimetable() {
     setIsLoading(true);
     setError(null);
 
-    // Validation - changed from classId to class
-    if (!formData.class) {
-      setError('Please select a class');
-      setIsLoading(false);
-      return;
-    }
+   
 
-    // Check all periods have teacher and subject
     for (let i = 0; i < formData.periods.length; i++) {
       const period = formData.periods[i];
       if (!period.teacher || !period.subject) {
@@ -137,7 +149,6 @@ function AddTimetable() {
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to create timetable');
       }
-
       alert('Timetable created successfully!');
       navigate('/admin-timetable');
     } catch (err) {
@@ -165,8 +176,8 @@ function AddTimetable() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Select Class</label>
               <select
                 className="w-full border rounded px-3 py-2"
-                value={formData.class}  // Changed from classId to class
-                onChange={(e) => setFormData({ ...formData, class: e.target.value })}  // Changed from classId to class
+                value={formData.class}
+                onChange={(e) => setFormData({ ...formData, class: e.target.value })}
                 required
               >
                 <option value="">-- Select Class --</option>
@@ -227,20 +238,17 @@ function AddTimetable() {
                     required
                   >
                     <option value="">Select Subject</option>
-                    {period.teacher && 
-                      teachers
-                        .find(t => t._id === period.teacher)
-                        ?.subjects
-                        .map(subId => {
-                          const sub = subjects.find(s => s._id === subId);
-                          return sub ? (
-                            <option key={sub._id} value={sub._id}>
-                              {sub.name}
-                            </option>
-                          ) : null;
-                        })
-                        .filter(Boolean)
-                    }
+                    {period.teacher && teachers
+                      .find(t => t._id === period.teacher)
+                      ?.subjects
+                      .map(subId => {
+                        const sub = subjects.find(s => s._id === subId);
+                        return sub ? (
+                          <option key={sub._id} value={sub._id}>
+                            {sub.name}
+                          </option>
+                        ) : null;
+                      })}
                   </select>
 
                   <input

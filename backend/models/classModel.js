@@ -41,9 +41,9 @@ const classSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student'
   }],
-  schedule: {
+  timetable: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Schedule'
+    ref: 'Timetable'
   },
   academicYear: {
     type: String,

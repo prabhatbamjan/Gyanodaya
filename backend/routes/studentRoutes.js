@@ -15,11 +15,13 @@ router.route('/')
     .post(createStudent);
 
 
-// Get student by ID
-router.route('/edit/:id')
+// Get student by 
+router.route('/:id')
     .get(getStudentById)
     .put(updateStudent)
     .delete(deleteStudent);
+
+
 
 router.route('/parents')
     .get(getparents);

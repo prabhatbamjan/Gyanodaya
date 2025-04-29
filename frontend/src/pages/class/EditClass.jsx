@@ -25,6 +25,7 @@ function EditClass() {
     const fetchClassData = async () => {
       try {
         const res = await authAxios.get(`classes/${id}`);
+        
         const classData = res.data.data;
         setFormData({
           ...classData,

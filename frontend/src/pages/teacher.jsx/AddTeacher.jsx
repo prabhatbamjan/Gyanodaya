@@ -172,13 +172,25 @@ const AddTeacher = () => {
         setError('First name is required');
         return false;
     }
+    if(!formData.firstName.trim().match(/^[A-Za-z\s']{2,}$/)){
+      setError('First name must contain only letters');
+      return false;
+    }
     if (!formData.lastName.trim()) {
         setError('Last name is required');
         return false;
     }
+    if(!formData.lastName.trim().match(/^[A-Za-z\s']{1,}$/)){
+      setError('Last name must contain only letters');
+      return false;
+    }
     if (!formData.email.trim()) {
         setError('Email is required');
         return false;
+    }
+    if (!formData.email.trim().match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+      setError('Invalid email format');
+      return false;
     }
    
     if (!formData.gender) {
@@ -229,9 +241,61 @@ const AddTeacher = () => {
       return false;
   }
 
-  if (formData.subjects.length > 3 || formData.subjects.length === 0  ) {
-    setError('You can only assign up to 3 subjects');
+  if (formData.subjects.length > 2 || formData.subjects.length === 0  ) {
+    setError('You can only assign up to 2 subjects');
     
+    return false;
+  }
+  if(formData.subjects.length === 0){
+    setError('Please assign at least one subject');
+    return false;
+  }
+  const dobDate = new Date(formData.dob);
+  const admissionDate = new Date(formData.admissionDate);
+  const currentDate = new Date();
+
+ 
+
+  // Date validation
+  if (!formData.dob) {
+    setError('Date of birth is required');
+    return false;
+  }
+
+  if (!formData.joinDate) {
+    setError('Joining date is required');
+    return false;
+  }
+
+  // Check if dates are in the future
+  if (dobDate > currentDate) {
+    setError('Date of birth cannot be in the future');
+    return false;
+  }
+
+  if (joinDate > currentDate) {
+    setError('Joining date cannot be in the future');
+    return false;
+  }
+
+  // Check if dob is before admission date
+  if (dobDate >= joinDate) {
+    setError('Date of birth must be before joining date');
+    return false;
+  }
+
+  // Calculate age difference (minimum 3 years)
+  const ageDiff = admissionDate.getFullYear() - dobDate.getFullYear();
+  const monthDiff = admissionDate.getMonth() - dobDate.getMonth();
+  
+  // Adjust age if birthday hasn't occurred yet in the admission year
+  const actualAge = monthDiff < 0 || 
+                   (monthDiff === 0 && admissionDate.getDate() < dobDate.getDate()) 
+                   ? ageDiff - 1 
+                   : ageDiff;
+
+  if (actualAge < 18) {
+    setError('Teacher must be at least 18 years old at joining');
     return false;
   }
     
