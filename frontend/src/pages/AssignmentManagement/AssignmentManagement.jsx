@@ -481,40 +481,26 @@ const AssignmentManagement = () => {
                           </button>
 
                           {actionMenuId === assignment._id && (
-                            <div className="absolute right-6 top-12 z-10 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+                            <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                               <Link
-                                to={`/assignments/${assignment._id}`}
+                                to={`/assignments/edit/${assignment._id}`}
                                 className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                <BookOpen className="mr-3 h-4 w-4 text-gray-500" />
-                                View Details
-                              </Link>
-                              <Link
-                                to={`/assignments/${assignment._id}/grade`}
-                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              >
-                                <CheckCircle className="mr-3 h-4 w-4 text-gray-500" />
-                                Grade Submissions
-                              </Link>
-                              <Link
-                                to={`/assignments/${assignment._id}/edit`}
-                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              >
-                                <Edit className="mr-3 h-4 w-4 text-gray-500" />
+                                <Edit className="mr-2 h-4 w-4 text-gray-500" />
                                 Edit Assignment
                               </Link>
-                              <button
-                                onClick={() => handleDownloadSubmissions(assignment._id)}
+                              <Link
+                                to={`/assignments/grading/${assignment._id}`}
                                 className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                <Download className="mr-3 h-4 w-4 text-gray-500" />
-                                Download Submissions
-                              </button>
+                                <CheckCircle className="mr-2 h-4 w-4 text-gray-500" />
+                                View Submissions
+                              </Link>
                               <button
                                 onClick={() => handleDeleteClick(assignment)}
                                 className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                               >
-                                <Trash2 className="mr-3 h-4 w-4 text-red-500" />
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Assignment
                               </button>
                             </div>

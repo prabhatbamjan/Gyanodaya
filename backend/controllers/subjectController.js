@@ -1,8 +1,8 @@
 const Subject = require('../models/subjectModel');
+const Class = require('../models/classModel');
+const Timetable = require('../models/timetableModel');
+const Teacher= require('../models/teacherModel');
 
-// @desc    Get all subjects
-// @route   GET /api/subjects
-// @access  Public
 exports.getSubjects = async (req, res) => {
     try {
         const subjects = await Subject.find();
@@ -18,9 +18,7 @@ exports.getSubjects = async (req, res) => {
     }
 };
 
-// @desc    Get single subject
-// @route   GET /api/subjects/:id
-// @access  Public
+
 exports.getSubject = async (req, res) => {
     try {
         const subject = await Subject.findById(req.params.id);
@@ -46,9 +44,7 @@ exports.getSubject = async (req, res) => {
     }
 };
 
-// @desc    Create new subject
-// @route   POST /api/subjects
-// @access  Private (Admin only)
+
 exports.createSubject = async (req, res) => {
     try {
         // Check if subject code already exists
@@ -76,9 +72,7 @@ exports.createSubject = async (req, res) => {
     }
 };
 
-// @desc    Update subject
-// @route   PUT /api/subjects/:id
-// @access  Private (Admin only)
+
 exports.updateSubject = async (req, res) => {
     try {
         // Check if updated code already exists (if code is being changed)
@@ -123,43 +117,56 @@ exports.updateSubject = async (req, res) => {
     }
 };
 
-// @desc    Delete subject
-// @route   DELETE /api/subjects/:id
-// @access  Private (Admin only)
+
 exports.deleteSubject = async (req, res) => {
     try {
-        const subject = await Subject.findByIdAndDelete(req.params.id);
-
-        if (!subject) {
-            return res.status(404).json({
-                success: false,
-                message: 'Subject not found'
-            });
-        }
-        const removedFromTimetables = await Timetable.findByIdAndDelete(req.params.id);
-        const removedFromTeachers = await Teacher.findByIdAndDelete(req.params.id);
-
-      if(removedFromTimetables || removedFromTeachers){
-        return res.status(400).json({
-            success: false,
-            message: 'Subject is currently assigned to timetables or teachers'
+      const subjectId = req.params.id;
+  
+      // Check if the subject exists
+      const subject = await Subject.findById(subjectId);
+      if (!subject) {
+        return res.status(404).json({
+          success: false,
+          message: 'Subject not found',
         });
       }
-        
-
-        res.status(200).json({
-            success: true,
-            data: {}
-        });
+  
+      // Step 1: Remove subject from teachers' subjects
+      await Teacher.updateMany(
+        { subjects: subjectId },
+        { $pull: { subjects: subjectId } }
+      );
+  
+      // Step 2: Remove subject from all timetables
+      await Timetable.updateMany(
+        {},
+        { $pull: { 'timetable': { subjectId: subjectId } } }
+      );
+  
+      // Step 3: Remove subject from all classes
+      await Class.updateMany(
+        { subjects: subjectId },
+        { $pull: { subjects: subjectId } }
+      );
+  
+      // Step 4: Delete the subject
+      await Subject.findByIdAndDelete(subjectId);
+  
+      res.status(200).json({
+        success: true,
+        message: 'Subject and all references (teachers, timetables, classes) removed successfully',
+      });
+  
     } catch (error) {
-        console.error('Error deleting Subject:', error);
-        res.status(400).json({
-            success: false,
-            message: error.message
-            
-        });
+      console.error('Error deleting subject:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
-}; 
+  };
+  
+  
 
 exports.getSubjectss = async (req, res) => {
     try {

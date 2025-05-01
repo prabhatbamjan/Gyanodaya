@@ -3,10 +3,11 @@ const User = require('../models/userModels');
 const Parent = require('../models/parentModel');
 const Class = require('../models/classModel');
 const sendEmail= require('../utils/email')
+const mongoose = require('mongoose');
+const Cloudinary =require('../middleware/cloudnery')
+const fs = require("fs");
+require("dotenv").config();
 
-// @desc    Create a new student (admin)
-// @route   POST /api/admin/students
-// @access  Private (Admin only)
 exports.createStudent = async (req, res) => {
   try {
         const {      firstName, 
@@ -28,7 +29,12 @@ exports.createStudent = async (req, res) => {
         parentphone,
         parentoccupation,
         parentrelation} = req.body;
-
+        const imagePath = req.file.path
+        const result = await Cloudinary.uploader.upload(imagePath, {
+          folder: "Student",
+        });
+    
+        fs.unlinkSync(imagePath);
     // Check if student/user already exists
     if (await User.findOne({ email }) || await Student.findOne({ email })) {
       return res.status(400).json({
@@ -65,6 +71,7 @@ exports.createStudent = async (req, res) => {
 
     // Create Student (with parent reference)
     const student = await Student.create({
+      imageUrl: result.secure_url,
       firstName: firstName,
       lastName: lastName,
       email: email,
@@ -150,6 +157,11 @@ exports.createStudent = async (req, res) => {
         }
       });
     } catch (error) {
+      return res.status(500).json({
+        status: 'error',
+        message: 'There was an error sending the email. Try again later!'
+      });
+      
       console.error('Error sending email:', error);
     } 
 
@@ -430,5 +442,84 @@ exports.getparents = async (req, res) => {
     });
   }
 };  
+
+exports.getstudnetByclass = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const students = await Student.find({ class: id })
+      .populate('parent', 'phone'); // Make sure this is correct
+
+    res.status(200).json({
+      success: true,
+      data: students
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+exports.getStudentsByClasses = async (req, res) => {
+  try {
+    const rawClassIds = req.query.classIds;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sortField = req.query.sortField || 'firstName';
+    const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
+
+    if (!rawClassIds) {
+      return res.status(400).json({
+        success: false,
+        message: 'No class IDs provided',
+      });
+    }
+
+    const classIds = rawClassIds
+      .split(',')
+      .map(id => id.trim())
+      .filter(id => mongoose.Types.ObjectId.isValid(id));
+
+    if (classIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid class IDs provided',
+      });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [students, total] = await Promise.all([
+      Student.find({ class: { $in: classIds } })
+        .populate('parent', 'firstName lastName phone email occupation relationship')
+        .populate('class', 'name section grade capacity')
+        .sort({ [sortField]: sortOrder })
+        .skip(skip)
+        .limit(limit),
+      Student.countDocuments({ class: { $in: classIds } })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: students,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+        itemsPerPage: limit
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getStudentsByClasses:', error.message);
+    res.status(500).json({
+      success: false,
+      message: 'Server error: ' + error.message,
+    });
+  }
+};
+
 
 

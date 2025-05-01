@@ -55,8 +55,9 @@ const AddSubject = () => {
       setError("Subject name is required");
       return;
     }
-    if(!subjectData.department.trim()){
-      setError("Department is required");
+
+    if (!subjectData.name.trim().match(/^[A-Z][a-zA-Z\s']*$/)) {
+      setError("Subject name must start with a capital letter and contain only letters, spaces, or apostrophes.");
       return;
     }
     if(!subjectData.description.trim()){

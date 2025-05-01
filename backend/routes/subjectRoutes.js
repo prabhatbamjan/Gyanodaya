@@ -7,7 +7,7 @@ const {
     updateSubject,
     deleteSubject,
     getSubjectss
-} = require('../contorollers/subjectController');
+} = require('../controllers/subjectController');
 
 // Get all subjects and create a new subject
 router.route('/')

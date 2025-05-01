@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Check, X, Clock, Info } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import Layout from '../../components/layoutes/teacherlayout';
 import Loader from '../../components/Loader';
-import authAxios from '../../utils/auth';
+import authAxios, { getUserData } from '../../utils/auth';
 
 const TeacherMarkAttendance = () => {
   const navigate = useNavigate();
@@ -13,55 +13,125 @@ const TeacherMarkAttendance = () => {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
+  const [teacherTimetables, setTeacherTimetables] = useState([]);
+  
+  const userdata = getUserData();
   const [formData, setFormData] = useState({
     class: '',
     subject: '',
     date: new Date().toISOString().split('T')[0],
-    period: 1,
+    period: '',
     records: [],
+    teacher:userdata.id,
     academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
   });
+ 
+
+
 
   useEffect(() => {
     fetchTeacherData();
+  }, []);
+
+  useEffect(() => {
+    if (formData.class) {
+      updateSubjectsForClass(formData.class);
+      fetchStudentsForClass(formData.class);
+    }
   }, [formData.class]);
 
   const fetchTeacherData = async () => {
     setLoading(true);
     try {
-      const [classesRes, subjectsRes] = await Promise.all([
+      const [classesRes, teacherRes] = await Promise.all([
         authAxios.get('classes/'),
-        authAxios.get('subjects/')
+        authAxios.get(`timetables/teacher/class/${userdata.id}`)
       ]);
-      console.log(classesRes.data.data);
-      console.log(subjectsRes.data.data);
-      setClasses(classesRes.data.data || []);
-      setSubjects(subjectsRes.data.data || []);
 
-      if (formData.class) {
-        const studentsRes = await authAxios.get(`class/${formData.class}`);
-        setStudents(studentsRes.data.data || []);
+      const allClasses = classesRes.data.data || [];
+      const teacherData = teacherRes.data.data || [];
+  console.log(allClasses)
+      setTeacherTimetables(teacherData);
 
-        setFormData(prev => ({
-          ...prev,
-          records: studentsRes.data.data.map(student => ({
-            student: student._id,
-            status: 'present',
-            remarks: ''
-          }))
-        }));
-      }
+      const classIds = new Set();
+      teacherData.forEach(timetable => {
+        if (timetable.class?._id) classIds.add(timetable.class._id);
+      });
+
+      const filteredClasses = allClasses.filter(cls => classIds.has(cls._id));
+      setClasses(filteredClasses);
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching teacher data:', err);
       setError('Failed to load teacher data');
     } finally {
       setLoading(false);
     }
   };
 
+  const updateSubjectsForClass = (classId) => {
+    const classSubjects = teacherTimetables
+      .filter(t => t.class?._id === classId)
+      .flatMap(t => t.periods || [])
+      .map(p => p.subject)
+      .filter((subj, index, self) => subj && self.findIndex(s => s._id === subj._id) === index);
+
+    setSubjects(classSubjects);
+    setFormData(prev => ({
+      ...prev,
+      subject: '',
+      period: '',
+      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+    }));
+  };
+
+  const fetchStudentsForClass = async (classId) => {
+    try {
+      const studentsRes = await authAxios.get(`students/class/${classId}`);
+      if (studentsRes.status === 200) {
+        const studentData = studentsRes.data.data || [];
+        setStudents(studentData);
+        setFormData(prev => ({
+          ...prev,
+          records: studentData.map(student => ({
+            student: student._id,
+            status: 'present',
+            remarks: '',
+            markedBy:userdata.id
+          }))
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to load students');
+    }
+  };
+
   const handleInputChange = e => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubjectChange = e => {
+    const subjectId = e.target.value;
+
+    // Find timetable with matching class and subject
+    const matchingTimetable = teacherTimetables.find(t =>
+      t.class?._id === formData.class &&
+      t.periods?.some(p => p.subject?._id === subjectId)
+    );
+
+    const matchingPeriod = matchingTimetable?.periods?.find(p => p.subject?._id === subjectId);
+
+    // Get academic year from class if it exists
+    const selectedClass = classes.find(cls => cls._id === formData.class);
+    const academicYearFromClass = selectedClass?.academicYear || formData.academicYear;
+
+    setFormData(prev => ({
+      ...prev,
+      subject: subjectId,
+      period: matchingPeriod?.periodNumber || '',
+      academicYear: academicYearFromClass
+    }));
   };
 
   const handleStudentStatusChange = (studentId, status) => {
@@ -89,11 +159,14 @@ const TeacherMarkAttendance = () => {
       if (!formData.class || !formData.subject || !formData.date || !formData.period) {
         throw new Error('Please fill in all required fields');
       }
-
+      const today = new Date().toISOString().split('T')[0];
+      if (formData.date !== today) {
+        throw new Error('You can only mark attendance for today.');
+      }
       const res = await authAxios.post('attendance/', formData);
       if (!res.data.success) throw new Error(res.data.message);
       alert('Attendance saved!');
-      navigate('/teacher/attendance');
+      navigate('/teacher-attendance');
     } catch (err) {
       setError(err.message || 'Failed to save attendance');
     } finally {
@@ -101,20 +174,10 @@ const TeacherMarkAttendance = () => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'present': return <Check className="text-green-500" />;
-      case 'absent': return <X className="text-red-500" />;
-      case 'late': return <Clock className="text-yellow-500" />;
-      case 'excused': return <Info className="text-blue-500" />;
-      default: return null;
-    }
-  };
-
   return (
     <Layout>
       <div className="container mx-auto px-4 py-6">
-        <button onClick={() => navigate('/teacher/attendance')} className="text-blue-600 mb-4">
+        <button onClick={() => navigate('/teacher-attendance')} className="text-blue-600 mb-4">
           <ArrowLeft className="inline mr-1" /> Back
         </button>
         <h1 className="text-2xl font-semibold mb-4">Mark Attendance</h1>
@@ -130,7 +193,7 @@ const TeacherMarkAttendance = () => {
               ))}
             </select>
 
-            <select name="subject" value={formData.subject} onChange={handleInputChange} required className="border p-2 rounded">
+            <select name="subject" value={formData.subject} onChange={handleSubjectChange} required className="border p-2 rounded">
               <option value="">Select Subject</option>
               {subjects.map(sub => (
                 <option key={sub._id} value={sub._id}>{sub.name}</option>
@@ -148,8 +211,20 @@ const TeacherMarkAttendance = () => {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <input type="number" name="period" value={formData.period} onChange={handleInputChange} min="1" max="8" className="border p-2 rounded" />
-            <input type="text" name="academicYear" value={formData.academicYear} onChange={handleInputChange} className="border p-2 rounded" />
+            <input
+              type="number"
+              name="period"
+              value={formData.period}
+              readOnly
+              className="border p-2 rounded bg-gray-100"
+            />
+            <input
+              type="text"
+              name="academicYear"
+              value={formData.academicYear}
+              readOnly
+              className="border p-2 rounded bg-gray-100"
+            />
           </div>
 
           {loading ? (
@@ -161,20 +236,27 @@ const TeacherMarkAttendance = () => {
                 {students.map(student => {
                   const record = formData.records.find(r => r.student === student._id);
                   return (
-                    <li key={student._id} className="py-3 flex justify-between items-center">
+                    <li key={student._id} className="py-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                       <div>
                         <p>{student.firstName} {student.lastName}</p>
                         <p className="text-sm text-gray-500">Roll No: {student.rollNumber}</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {['present', 'absent', 'late', 'excused'].map(status => (
                           <button
                             type="button"
                             key={status}
                             onClick={() => handleStudentStatusChange(student._id, status)}
-                            className={`p-2 rounded-full ${record?.status === status ? 'bg-gray-200' : 'bg-gray-50'}`}
+                            className={`px-3 py-1 rounded-full text-white font-medium ${
+                              record?.status === status
+                                ? status === 'present' ? 'bg-green-600' :
+                                  status === 'absent' ? 'bg-red-600' :
+                                  status === 'late' ? 'bg-yellow-500' :
+                                  'bg-blue-600'
+                                : 'bg-gray-300 text-black'
+                            }`}
                           >
-                            {getStatusIcon(status)}
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
                           </button>
                         ))}
                         <input

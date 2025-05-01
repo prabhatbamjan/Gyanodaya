@@ -27,6 +27,15 @@ const assignmentSchema = new mongoose.Schema({
     ref: 'Teacher',
     required: [true, 'Please provide teacher ID']
   },
+  period: {
+    type: Number,
+    required: [true, 'Please provide period number']
+  },
+  academicYear: {
+    type: String,
+    required: [true, 'Please provide academic year'],
+    match: [/^\d{4}-\d{4}$/, 'Academic year must be in format YYYY-YYYY']
+  },
   dueDate: {
     type: Date,
     required: [true, 'Please provide due date']
@@ -46,10 +55,40 @@ const assignmentSchema = new mongoose.Schema({
     fileType: String,
     fileSize: Number
   }],
-  isDraft: {
-    type: Boolean,
-    default: false
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'closed'],
+    default: 'draft'
   },
+  submissions: [{
+    student: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Student',
+      required: true
+    },
+    submittedAt: {
+      type: Date
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'submitted', 'late', 'not_submitted'],
+      default: 'pending'
+    },
+    marks: {
+      type: Number,
+      min: 0
+    },
+    remarks: {
+      type: String,
+      trim: true
+    },
+    attachments: [{
+      fileName: String,
+      filePath: String,
+      fileType: String,
+      fileSize: Number
+    }]
+  }],
   createdAt: {
     type: Date,
     default: Date.now

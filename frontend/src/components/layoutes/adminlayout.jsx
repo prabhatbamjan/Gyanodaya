@@ -14,20 +14,25 @@ import {
   Package,
   User,
   Settings,
-  Bell
+  Bell,
+  MessageSquare
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout, getUserData } from '../../utils/auth';
+import { getChats } from '../../services/messageService';
 
 function Layout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isChatNotificationsOpen, setIsChatNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, message: 'New student registration', time: '10 min ago' },
     { id: 2, message: 'Upcoming parent-teacher meeting', time: '1 hour ago' },
     { id: 3, message: 'School event tomorrow', time: '2 hours ago' },
   ]);
+  const [chats, setChats] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -35,6 +40,7 @@ function Layout({ children }) {
  
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+  const chatNotificationsRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -45,12 +51,38 @@ function Layout({ children }) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
+      if (chatNotificationsRef.current && !chatNotificationsRef.current.contains(event.target)) {
+        setIsChatNotificationsOpen(false);
+      }
     }
     
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  // Load chats and calculate unread count
+  useEffect(() => {
+    async function loadChats() {
+      try {
+        const response = await getChats();
+        const chatsWithUnread = response.data;
+        setChats(chatsWithUnread);
+        
+        // Calculate total unread count
+        const total = chatsWithUnread.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+        setUnreadCount(total);
+      } catch (error) {
+        console.error('Error loading chats:', error);
+      }
+    }
+    
+    loadChats();
+    
+    // Refresh chats every minute
+    const intervalId = setInterval(loadChats, 60000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const handleLogout = () => {
@@ -65,11 +97,19 @@ function Layout({ children }) {
   const toggleNotifications = () => {
     setIsNotificationsOpen(!isNotificationsOpen);
     if (isUserMenuOpen) setIsUserMenuOpen(false);
+    if (isChatNotificationsOpen) setIsChatNotificationsOpen(false);
+  };
+
+  const toggleChatNotifications = () => {
+    setIsChatNotificationsOpen(!isChatNotificationsOpen);
+    if (isUserMenuOpen) setIsUserMenuOpen(false);
+    if (isNotificationsOpen) setIsNotificationsOpen(false);
   };
 
   const toggleUserMenu = () => {
     setIsUserMenuOpen(!isUserMenuOpen);
     if (isNotificationsOpen) setIsNotificationsOpen(false);
+    if (isChatNotificationsOpen) setIsChatNotificationsOpen(false);
   };
 
   // Function to determine if a link is active
@@ -83,6 +123,23 @@ function Layout({ children }) {
     return false;
   };
 
+  // Helper function to get chat name
+  const getChatName = (chat) => {
+    if (chat.isGroupChat && chat.groupName) {
+      return chat.groupName;
+    }
+    
+    // For one-on-one chats, show the other user's name
+    const otherUser = chat.participants.find(p => p._id !== userData._id);
+    return otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : 'Unknown User';
+  };
+
+  // Function to format message preview (truncate if too long)
+  const formatMessagePreview = (message) => {
+    if (!message) return '';
+    return message.length > 30 ? message.substring(0, 30) + '...' : message;
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       {/* Top navigation */}
@@ -94,6 +151,67 @@ function Layout({ children }) {
           </div>
           
           <div className="flex items-center">
+            {/* Chat Notifications */}
+            <div className="relative mr-4" ref={chatNotificationsRef}>
+              <button 
+                className="text-white p-2 rounded-full hover:bg-blue-500 relative"
+                onClick={toggleChatNotifications}
+              >
+                <MessageSquare className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              
+              {/* Chat Notifications dropdown */}
+              {isChatNotificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg py-1 z-50">
+                  <div className="px-4 py-2 border-b border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700">Messages</h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {chats.length === 0 ? (
+                      <div className="px-4 py-3 text-center text-gray-500">
+                        No conversations yet
+                      </div>
+                    ) : (
+                      chats.map(chat => (
+                        <Link 
+                          to={`/messages?chatId=${chat._id}`} 
+                          key={chat._id} 
+                          className="block"
+                          onClick={() => setIsChatNotificationsOpen(false)}
+                        >
+                          <div className={`px-4 py-3 hover:bg-gray-100 border-b border-gray-100 ${chat.unreadCount > 0 ? 'bg-blue-50' : ''}`}>
+                            <div className="flex justify-between">
+                              <p className="text-sm font-medium text-gray-800">{getChatName(chat)}</p>
+                              {chat.unreadCount > 0 && (
+                                <span className="bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                  {chat.unreadCount}
+                                </span>
+                              )}
+                            </div>
+                            {chat.messages && chat.messages.length > 0 && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {formatMessagePreview(chat.messages[chat.messages.length - 1].text)}
+                              </p>
+                            )}
+                          </div>
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                  <div className="px-4 py-2 text-center border-t border-gray-100">
+                    <Link to="/messages" className="text-sm text-blue-600 hover:text-blue-800" onClick={() => setIsChatNotificationsOpen(false)}>
+                      View all messages
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {/* Notifications */}
             <div className="relative mr-4" ref={notificationsRef}>
               <button 
@@ -290,19 +408,31 @@ function Layout({ children }) {
                 </Link>
               </li>
               <li>
-                    <Link 
-                      to="/attendance" 
-                      className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/attendance') 
-                          ? 'bg-blue-50 border-r-4 border-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={toggleMobileMenu}
-                    >
-                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Attendance</span>
-                    </Link>
-                  </li>
+                <Link 
+                  to="/attendance" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/attendance') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Attendance</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/messages" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/messages') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <MessageSquare className={`h-5 w-5 mr-3 ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Messages</span>
+                </Link>
+              </li>
               <li>
                 <Link 
                   to="/admin-events" 
@@ -460,8 +590,22 @@ function Layout({ children }) {
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Attendance</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/messages" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/messages') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <MessageSquare className={`h-5 w-5 mr-3 ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Messages</span>
                     </Link>
                   </li>
                   <li>

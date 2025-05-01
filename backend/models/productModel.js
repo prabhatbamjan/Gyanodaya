@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+const cloudinaryImageSchema = new mongoose.Schema({
+    public_id: String,
+    secure_url: String,
+    url: String,
+    asset_id: String,
+    signature: String,
+    width: Number,
+    height: Number,
+    format: String
+}, { _id: false });
+
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -11,9 +22,14 @@ const productSchema = new mongoose.Schema({
         required: [true, 'Product description is required'],
         trim: true
     },
-    price: {
+    sellingPrice: {
         type: Number,
-        required: [true, 'Product price is required'],
+        required: [true, 'Seling Product price is required'],
+        min: [0, 'Price cannot be negative']
+    },
+    costPrice: {
+        type: Number,
+        required: [true, 'Cost Product price is required'],
         min: [0, 'Price cannot be negative']
     },
     category: {
@@ -27,8 +43,8 @@ const productSchema = new mongoose.Schema({
         min: [0, 'Stock cannot be negative']
     },
     image: {
-        type: String,
-        default: 'default-product.jpg'
+        type: cloudinaryImageSchema,
+        default: null
     },
     status: {
         type: String,

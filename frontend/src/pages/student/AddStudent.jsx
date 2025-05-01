@@ -92,20 +92,78 @@ const AddStudent = () => {
       setSaving(false);
       return;
     }
- 
 
     try {
-      const response = await authAxios.post('students/', formData);
+      // Create FormData object for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all text fields to FormData
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('gender', formData.gender);
+      formDataToSend.append('dob', formData.dob);
+      formDataToSend.append('bloodGroup', formData.bloodGroup);
+      formDataToSend.append('admissionDate', formData.admissionDate);
+      formDataToSend.append('classId', formData.classId);
+      
+      // Add address fields
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('city', formData.city);
+      formDataToSend.append('state', formData.state);
+      formDataToSend.append('zipCode', formData.zipCode);
+      formDataToSend.append('country', formData.country);
+      
+      // Add parent fields
+      formDataToSend.append('parentfirstName', formData.parentfirstName);
+      formDataToSend.append('parentlastName', formData.parentlastName);
+      formDataToSend.append('parentemail', formData.parentemail);
+      formDataToSend.append('parentphone', formData.parentphone);
+      formDataToSend.append('parentoccupation', formData.parentoccupation);
+      formDataToSend.append('parentrelation', formData.parentrelation);
+      
+      // Add the image file if selected
+      if (profileImage) {
+        formDataToSend.append('image', profileImage);
+      } else {
+        setSaving(false);
+        setError('Please upload a profile image');
+        return;
+      }
+      
+      console.log('Sending student data');
+      
+      // Send the form data to the server
+      const response = await authAxios.post('students/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log(response.data);
+      
       if(response.status === 201){
+        alert('Student added successfully!');
         navigate('/admin-students');
       }
-      // Handle successful submission (e.g., redirect)
     } catch (err) {
+      console.error('Error:', err);
+      if (err.response && err.response.data) {
+        console.error('Server response:', err.response.data);
+        setError(err.response.data.message || 'Failed to add student. Please try again.');
+      } else {
+        setError(err.message || 'Failed to add student. Please try again.');
+      }
       setSaving(false);
-      setError(err.response.data.message);
     }
   };
+
   const validateForm = () => {
+    // Image validation
+    if (!profileImage) {
+      setError('Please upload a profile image');
+      return false;
+    }
         
     // Basic validation
     if (!formData.firstName.trim()) {
@@ -309,6 +367,34 @@ const AddStudent = () => {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg overflow-hidden">
+          {/* Profile Image Upload */}
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Profile Image</h2>
+            <div className="flex flex-col items-center mb-4">
+              <div className="mb-4 w-40 h-40 rounded-full border-2 border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Profile Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-gray-400 flex flex-col items-center justify-center">
+                    <Upload size={40} />
+                    <span className="text-sm mt-2">No image</span>
+                  </div>
+                )}
+              </div>
+              <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+                <Upload size={16} className="mr-2" />
+                {imagePreview ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+              <p className="text-xs text-gray-500 mt-2">Max size: 2MB. Formats: JPG, PNG</p>
+            </div>
+          </div>
+
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Personal Information</h2>
             

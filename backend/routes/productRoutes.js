@@ -10,18 +10,16 @@ const {
     getProductsByCategory
 } = require('../controllers/productController');
 const authController = require('../middleware/auth');
-
+const upload = require("../middleware/uplode");
 // Public routes
 router.get('/', getAllProducts);
 router.get('/category/:category', getProductsByCategory);
 router.get('/:id', getProductById);
 
-// Protected routes (require authentication)
-// router.use(protect);
 router.use(authController.protect);
 // Admin only routes
-router.post('/', createProduct);
-router.put('/:id', updateProduct);
+router.post('/',upload.single("image"), createProduct);
+router.put('/:id',upload.single("image"), updateProduct);
 router.delete('/:id', deleteProduct);
 
 module.exports = router; 

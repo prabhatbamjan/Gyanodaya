@@ -9,7 +9,7 @@ const {
   deleteNotification,
   markAsRead,
   markAllAsRead
-} = require('../contorollers/notificationController');
+} = require('../controllers/notificationController');
 
 const authController = require('../middleware/auth');
 

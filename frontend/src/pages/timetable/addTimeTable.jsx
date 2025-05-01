@@ -149,6 +149,7 @@ function AddTimetable() {
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to create timetable');
       }
+      console.log(formData);
       alert('Timetable created successfully!');
       navigate('/admin-timetable');
     } catch (err) {
@@ -211,13 +212,13 @@ function AddTimetable() {
 
             <div className="space-y-4">
               {formData.periods.map((period, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                  <div className="font-semibold text-gray-600">
+                <div key={index} className="grid grid-cols-1 md:grid-cols-6 gap-6 items-center p-4 rounded-lg bg-gray-50 shadow-sm">
+                  <div className="font-semibold text-gray-700">
                     Period {period.periodNumber}
                   </div>
 
                   <select
-                    className="border rounded px-2 py-1"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
                     value={period.teacher}
                     onChange={(e) => handlePeriodChange(index, 'teacher', e.target.value)}
                     required
@@ -231,7 +232,7 @@ function AddTimetable() {
                   </select>
 
                   <select
-                    className="border rounded px-2 py-1"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
                     value={period.subject}
                     onChange={(e) => handlePeriodChange(index, 'subject', e.target.value)}
                     disabled={!period.teacher}
@@ -253,14 +254,14 @@ function AddTimetable() {
 
                   <input
                     type="time"
-                    className="border rounded px-2 py-1"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
                     value={period.startTime}
                     onChange={(e) => handlePeriodChange(index, 'startTime', e.target.value)}
                     required
                   />
                   <input
                     type="time"
-                    className="border rounded px-2 py-1"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
                     value={period.endTime}
                     onChange={(e) => handlePeriodChange(index, 'endTime', e.target.value)}
                     required

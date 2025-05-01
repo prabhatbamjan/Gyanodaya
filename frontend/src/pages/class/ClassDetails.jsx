@@ -1,33 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit, Trash2, BookOpen, User, MapPin, Users, Briefcase } from 'lucide-react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Pencil, Trash, Users, BookOpen, Calendar, Clock, Home, Eye, Plus } from 'lucide-react';
 import Layout from '../../components/layoutes/adminlayout';
 import authAxios from '../../utils/auth';
+import {getUserRole}  from '../../utils/auth';
 
-function ClassDetails() {
-  const { id } = useParams();  
+const ClassDetails = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
   const [classData, setClassData] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('students');
+  const [students, setStudents] = useState([]);
+  const [timetable, setTimetable] = useState(null);
+  const role = getUserRole(); // 'admin', 'teacher', etc.
+const classesLink = `/${role}-classes`; 
+
 
   useEffect(() => {
     const fetchClassDetails = async () => {
-      setIsLoading(true);
+      setLoading(true);
       try {
-        // Fetch class details from the backend API
-          const classResponse = await authAxios.get(`classes/${id}`);
-          console.log(classResponse.data);
-          const classData = classResponse.data.data;
-
-        // Assuming the response has 'class' and 'students' as fields
-        setClassData(classData);
-        setStudents(classData.students);
-        setIsLoading(false);
+        // Fetch class details
+        const classResponse = await authAxios.get(`classes/${id}`);
+        
+        if (!classResponse.data.success) {
+          throw new Error('Failed to fetch class details');
+        }
+        
+        setClassData(classResponse.data.data);
+        
+        // Fetch students in this class
+        if (classResponse.data.data.students && classResponse.data.data.students.length > 0) {
+          const studentsResponse = await authAxios.get(`students/class/${id}`);
+          if (studentsResponse.status ===200) {
+            setStudents(studentsResponse.data.data);
+          }
+        }
+        
+        // Fetch timetable for this class
+        try {
+          const timetableResponse = await authAxios.get(`timetables/class/${id}`);
+          if (timetableResponse.status === 200) {
+            console.log("Timetable data received:", timetableResponse.data.data);
+            setTimetable(timetableResponse.data.data);
+          }
+        } catch (timetableErr) {
+          console.error('Error fetching timetable:', timetableErr);
+          // Continue with other data even if timetable fails
+        }
+        
+        setError(null);
       } catch (err) {
-        setError('Failed to fetch class details');
-        setIsLoading(false);
+        console.error('Error fetching class details:', err);
+        setError(err.message || 'Failed to load class details');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -36,344 +65,368 @@ function ClassDetails() {
 
 
 
-  if (isLoading && !classData) {
+  if (loading) {
     return (
-      <div className="p-6 flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+    
+        <div className="w-full p-6 bg-gray-50">
+          <div className="w-full bg-white rounded-lg shadow-sm p-6 flex justify-center">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              <p className="mt-4 text-gray-600">Loading class details...</p>
+            </div>
+          </div>
+        </div>
+     
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="bg-red-50 text-red-700 p-4 rounded-md">
-          <p>{error}</p>
-          <Link to="/admin/classes" className="text-blue-600 mt-2 inline-block">
-            Return to Classes
+      
+        <div className="w-full p-6 bg-gray-50">
+          <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
+            {error}
+          </div>
+          <Link to="/admin-classes" className="text-blue-600 hover:text-blue-800 flex items-center">
+            <ArrowLeft className="h-5 w-5 mr-1" />
+            Back to Classes
           </Link>
         </div>
-      </div>
+     
     );
   }
 
-  // Get list of subjects
-  const subjects = classData?.subjectTeachers?.map(st => st.subjectName) || [];
-
-  return (
-    <Layout>
-      <div className="p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <Link to="/admin/classes" className="flex items-center text-blue-600 mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" />
+  if (!classData) {
+    return (
+    
+        <div className="w-full p-6 bg-gray-50">
+          <div className="bg-yellow-100 text-yellow-700 p-4 rounded-lg mb-6">
+            Class not found
+          </div>
+          <Link to="/admin-classes" className="text-blue-600 hover:text-blue-800 flex items-center">
+            <ArrowLeft className="h-5 w-5 mr-1" />
             Back to Classes
           </Link>
-          <div className="flex flex-col md:flex-row md:items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">{classData?.name}</h1>
-              <p className="text-gray-600">Grade {classData?.grade}, Section {classData?.section}</p>
+        </div>
+   
+    );
+  }
+
+  return (
+    
+      <div className="w-full p-6 bg-gray-50">
+        {/* Header with actions */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div className="flex items-center mb-4 md:mb-0">
+            <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center mr-4">
+              <ArrowLeft className="h-5 w-5 mr-1" />
+              Back to Classes
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-800">
+              Class {classData.name}{classData.section ? `-${classData.section}` : ''}
+            </h1>
+          </div>
+          
+          
+        </div>
+        
+        {/* Class Info Card */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">Class Information</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Class & Section</h3>
+                <p className="text-lg font-medium text-gray-900">
+                  Grade {classData.grade} - {classData.section}
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Room Number</h3>
+                <div className="flex items-center">
+                  <Home className="h-5 w-5 text-gray-400 mr-2" />
+                  <p className="text-lg font-medium text-gray-900">{classData.roomNumber || 'Not assigned'}</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Academic Year</h3>
+                <p className="text-lg font-medium text-gray-900">{classData.academicYear}</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Class Teacher</h3>
+                {classData.classTeacher ? (
+                  <Link 
+                    to={`/admin-teachers/view/${classData.classTeacher._id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {classData.classTeacher.firstName} {classData.classTeacher.lastName}
+                  </Link>
+                ) : (
+                  <p className="text-gray-500">Not assigned</p>
+                )}
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Capacity</h3>
+                <p className="text-lg font-medium text-gray-900">{classData.capacity} students</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">Current Enrollment</h3>
+                <p className="text-lg font-medium text-gray-900">
+                  {classData.students?.length || 0} students
+                  {classData.capacity && classData.students?.length ? ` (${Math.round((classData.students.length / classData.capacity) * 100)}% full)` : ''}
+                </p>
+              </div>
             </div>
-         
           </div>
         </div>
-
-        {/* Class overview cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-start">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <BookOpen className="h-6 w-6 text-blue-700" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Subjects</h3>
-                <p className="text-xl font-semibold text-gray-800">{subjects.length}</p>
-              </div>
-            </div>
+        
+        {/* Tabs Navigation */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              <button
+                onClick={() => setActiveTab('students')}
+                className={`py-4 px-6 text-sm font-medium ${
+                  activeTab === 'students'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Users className="inline-block h-5 w-5 mr-2" />
+                Students
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('subjects')}
+                className={`py-4 px-6 text-sm font-medium ${
+                  activeTab === 'subjects'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <BookOpen className="inline-block h-5 w-5 mr-2" />
+                Subjects
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('timetable')}
+                className={`py-4 px-6 text-sm font-medium ${
+                  activeTab === 'timetable'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Calendar className="inline-block h-5 w-5 mr-2" />
+                Timetable
+              </button>
+            </nav>
           </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-start">
-              <div className="bg-green-100 p-3 rounded-full">
-                <Users className="h-6 w-6 text-green-700" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Students</h3>
-                <p className="text-xl font-semibold text-gray-800">{classData?.totalStudents}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-start">
-              <div className="bg-purple-100 p-3 rounded-full">
-                <User className="h-6 w-6 text-purple-700" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Class Teacher</h3>
-                <p className="text-xl font-semibold text-gray-800">{classData?.classTeacher}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-start">
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <MapPin className="h-6 w-6 text-yellow-700" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-sm font-medium text-gray-500">Room Number</h3>
-                <p className="text-xl font-semibold text-gray-800">{classData?.roomNumber || 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Class details */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column - Class information */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow mb-6">
-              <div className="border-b px-5 py-4">
-                <h2 className="text-lg font-semibold text-gray-800">Class Information</h2>
-              </div>
-              <div className="p-5">
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">Class Teacher</h3>
-                  <div className="flex items-center">
-                    <img
-                      src={classData?.classTeacher.profileImg}
-                      alt={classData?.classTeacher.name}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                    <div className="ml-3">
-                      <p className="font-medium text-gray-800">{classData?.classTeacher.name}</p>
-                      <p className="text-sm text-gray-500">{classData?.classTeacher.subject} Teacher</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Grade</h3>
-                    <p className="text-gray-800">Grade {classData?.grade}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Section</h3>
-                    <p className="text-gray-800">{classData?.section}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Room Number</h3>
-                    <p className="text-gray-800">{classData?.roomNumber || 'Not assigned'}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Total Students</h3>
-                    <p className="text-gray-800">{classData?.totalStudents}</p>
-                  </div>
-                </div>
-
-                {/* Subjects and Teachers */}
-                <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-500 mb-2">Subject Teachers</h3>
-                  <div className="space-y-3">
-                    {classData?.subjectTeachers.map((st) => (
-                      <div key={st.subjectId} className="flex items-center p-3 border rounded-md bg-gray-50">
-                        <div className="bg-blue-100 p-2 rounded-full">
-                          <BookOpen className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div className="ml-3 flex-grow">
-                          <p className="font-medium text-gray-800">{st.subjectName}</p>
-                          <div className="flex items-center mt-1">
-                            <img
-                              src={st.teacher.profileImg}
-                              alt={st.teacher.name}
-                              className="h-6 w-6 rounded-full object-cover mr-2"
-                            />
-                            <p className="text-sm text-gray-600">{st.teacher.name}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Created On</h3>
-                    <p className="text-gray-800">
-                      {new Date(classData?.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-500 mb-1">Last Updated</h3>
-                    <p className="text-gray-800">
-                      {new Date(classData?.updatedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Student list */}
-            <div className="bg-white rounded-lg shadow">
-              <div className="border-b px-5 py-4 flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-800">Students</h2>
-                <Link
-                  to={`/admin/classes/${id}/students`}
-                  className="text-blue-600 text-sm flex items-center"
-                >
-                  View All
-                  <ArrowLeft className="h-4 w-4 ml-1 transform rotate-180" />
-                </Link>
-              </div>
-              <div className="p-5">
-                {students.length > 0 ? (
-                  <div className="divide-y">
-                    {students.map(student => (
-                      <div key={student.id} className="py-3 flex items-center justify-between">
-                        <div className="flex items-center">
-                          <img
-                            src={student.profileImg}
-                            alt={student.name}
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
-                          <div className="ml-3">
-                            <p className="font-medium text-gray-800">{student.name}</p>
-                            <p className="text-sm text-gray-500">Roll No: {student.rollNumber}</p>
-                          </div>
-                        </div>
-                        <Link
-                          to={`/admin/students/${student.id}`}
-                          className="text-blue-600 text-sm"
-                        >
-                          View Details
-                        </Link>
-                      </div>
-                    ))}
+          
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Students Tab */}
+            {activeTab === 'students' && (
+              <div>
+               
+                
+                {students.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No students enrolled in this class yet.
                   </div>
                 ) : (
-                  <div className="py-4 text-center text-gray-500">
-                    No students added to this class yet.
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead>
+                        <tr className="bg-gray-50">
+                        
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student Name
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Gender
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Contact
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {students.map((student) => (
+                          <tr key={student._id} className="hover:bg-gray-50">
+                          
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="h-8 w-8 rounded-full bg-gray-200 flex-shrink-0 mr-3">
+                                  {student.profilePicture ? (
+                                    <img
+                                      src={student.profilePicture}
+                                      alt={`${student.firstName} ${student.lastName}`}
+                                      className="h-8 w-8 rounded-full"
+                                    />
+                                  ) : (
+                                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                                      <span className="text-sm font-medium text-blue-600">
+                                        {student.firstName?.[0]}{student.lastName?.[0]}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {student.firstName} {student.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-500">{student.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{student.gender}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{student.parent.phone}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <Link
+                                to={`/admin-students/view/${student._id}`}
+                                className="text-blue-600 hover:text-blue-900 mr-3"
+                              >
+                                View
+                              </Link>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-
-          {/* Right column - Teachers list */}
-          <div>
-            <div className="bg-white rounded-lg shadow mb-6">
-              <div className="border-b px-5 py-4 flex justify-between items-center">
-                <h2 className="text-lg font-semibold text-gray-800">Teachers</h2>
+            )}
+            
+            {/* Subjects Tab */}
+            {activeTab === 'subjects' && (
+              <div>
+              
+                
+                {!classData.subjects || classData.subjects.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No subjects assigned to this class yet.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {classData.subjects.map((subject) => (
+                      <div key={subject._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h3 className="text-lg font-medium text-gray-800">{subject.name}</h3>
+                        <p className="text-sm text-gray-500 mb-3">Code: {subject.code}</p>
+                        
+                        
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="p-5">
-                <div className="space-y-4">
-                  {/* Get unique teachers from subjectTeachers */}
-                  {Array.from(new Set(classData?.subjectTeachers.map(st => st.teacherId)))
-                    .map(teacherId => {
-                      const teacherEntry = classData?.subjectTeachers.find(st => st.teacherId === teacherId);
-                      const teacher = teacherEntry?.teacher;
-                      
-                      // Get all subjects taught by this teacher in this class
-                      const teacherSubjects = classData?.subjectTeachers
-                        .filter(st => st.teacherId === teacherId)
-                        .map(st => st.subjectName);
-                      
-                      const isClassTeacher = classData?.classTeacher.id === teacherId;
-                      
-                      return (
-                        <div key={teacherId} className="flex items-start border-b pb-4 last:border-0">
-                          <img
-                            src={teacher?.profileImg}
-                            alt={teacher?.name}
-                            className="h-12 w-12 rounded-full object-cover"
-                          />
-                          <div className="ml-3 flex-grow">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="font-medium text-gray-800">{teacher?.name}</p>
-                                <p className="text-sm text-gray-500 mb-1">{teacher?.subject} Teacher</p>
-                              </div>
-                              {isClassTeacher && (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  Class Teacher
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {teacherSubjects?.map((subject, index) => (
-                                <span key={index} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                                  {subject}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+            )}
+            
+            {/* Timetable Tab */}
+            {activeTab === 'timetable' && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800">Class Timetable</h3>
+                  <Link 
+                    to={`/admin-timetable/view/${id}`}
+                    className="text-blue-600 hover:text-blue-800 flex items-center"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Full Timetable
+                  </Link>
                 </div>
+                
+                {!timetable || timetable.length === 0 ? (
+                  <div className="bg-yellow-50 text-yellow-700 p-4 rounded-lg text-center">
+                    <p className="mb-2">No timetable has been created for this class yet.</p>
+                    {role === 'admin' && (
+                      <Link 
+                        to={`/admin-timetable/add?classId=${id}`}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Create Timetable
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Day
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Periods
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {timetable.map((daySchedule, index) => (
+                          <tr key={daySchedule._id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {daySchedule.day}
+                            </td>
+                            <td className="px-4 py-4 text-sm text-gray-500">
+                              {daySchedule.periods && daySchedule.periods.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                  {daySchedule.periods
+                                    .sort((a, b) => a.periodNumber - b.periodNumber)
+                                    .map((period, idx) => (
+                                      <div key={idx} className="bg-gray-50 p-2 rounded">
+                                        <div className="font-medium">Period {period.periodNumber}</div>
+                                        <div className="text-xs text-gray-600">
+                                          {period.subject?.name || "Unknown Subject"}
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {period.teacher ? 
+                                            `${period.teacher.firstName} ${period.teacher.lastName}` : 
+                                            "Not assigned"}
+                                        </div>
+                                        <div className="text-xs text-gray-400">
+                                          {period.startTime} - {period.endTime}
+                                        </div>
+                                      </div>
+                                    ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">No periods scheduled</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {timetable.length === 0 && (
+                          <tr>
+                            <td colSpan="2" className="px-4 py-4 text-center text-sm text-gray-500">
+                              No timetable data available
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
-
-        {/* Delete confirmation modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <Trash2 className="h-6 w-6 text-red-600" />
-                    </div>
-                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                        Delete Class
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          Are you sure you want to delete this class? This action cannot be undone.
-                          All data associated with this class will be permanently removed.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={isLoading}
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      'Delete'
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={isLoading}
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </Layout>
+    
   );
-}
+};
 
 export default ClassDetails; 

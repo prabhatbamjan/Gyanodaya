@@ -14,7 +14,9 @@ import {
   Package,
   User,
   Settings,
-  Bell
+  Bell,
+  Award,
+  MessageSquare
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout, getUserData } from '../../utils/auth';
@@ -228,31 +230,56 @@ function Layout({ children }) {
              
               <li>
                 <Link 
-                  to="/admin-classes" 
+                  to="/teacher-classes" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/classes') 
+                    isActive('/teacher-classes') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <BookOpen className={`h-5 w-5 mr-3 ${isActive('/admin/classes') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <BookOpen className={`h-5 w-5 mr-3 ${isActive('/teacher-classes') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>My Classes</span>
                 </Link>
               </li>     
               <li>
-                    <Link 
-                      to="/attendance" 
-                      className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/attendance') 
-                          ? 'bg-blue-50 border-r-4 border-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={toggleMobileMenu}
-                    >
-                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Attendance</span>
-                    </Link>
-                  </li>       
+                <Link 
+                  to="/teacher-attendance" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/teacher-attendance') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/teacher-attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Attendance</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/teacher-students" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/teacher-students') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Users className={`h-5 w-5 mr-3 ${isActive('/teacher-students') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Students</span>
+                </Link>
+              </li>     
+              <li>
+                <Link 
+                  to="/teacher-timetable" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/teacher-timetable') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Calendar className={`h-5 w-5 mr-3 ${isActive('/teacher-timetable') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>My Timetable</span>
+                </Link>
+              </li>
               <li>
                 <Link 
                   to="/admin-timetable" 
@@ -268,33 +295,58 @@ function Layout({ children }) {
               </li>  
               <li>
                 <Link 
-                  to="/assignment" 
+                  to="/assignments" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/assignment') 
+                    isActive('/assignments') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <BookOpen className={`h-5 w-5 mr-3 ${isActive('/assignment') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Calendar className={`h-5 w-5 mr-3 ${isActive('/assignments') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Assignments</span>
                 </Link>
               </li>        
              
-             
-            
               <li>
                 <Link 
-                  to="/#" 
+                  to="/teacher-results" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/notifications') 
+                    isActive('/teacher-results') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <BellRing className={`h-5 w-5 mr-3 ${isActive('/notifications') ? 'text-blue-600' : 'text-gray-500'}`} />
-                  <span>Notifications</span>
+                  <Award className={`h-5 w-5 mr-3 ${isActive('/teacher-results') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Results</span>
                 </Link>
               </li>
+              <li>
+                <Link 
+                  to="/messages" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/messages') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <MessageSquare className={`h-5 w-5 mr-3 ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Messages</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/teacher-notifications" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/teacher-notifications') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <BellRing className={`h-5 w-5 mr-3 ${isActive('/teacher-notifications') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Notifications & Events</span>
+                </Link>
+              </li>
+             
               <li>
                 <button 
                   onClick={handleLogout}
@@ -350,30 +402,44 @@ function Layout({ children }) {
                   </li>
                   <li>
                     <Link 
-                      to="/admin/students" 
+                      to="/teacher-students" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/students') 
+                        isActive('/teacher-students') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <Users className={`h-5 w-5 mr-3 ${isActive('/admin/students') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <Users className={`h-5 w-5 mr-3 ${isActive('/teacher-students') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Students</span>
                     </Link>
                   </li>
                   <li>
                     <Link 
-                      to="/admin/teachers" 
+                      to="/teacher-attendance" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/teachers') 
+                        isActive('/teacher-attendance') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <School2 className={`h-5 w-5 mr-3 ${isActive('/admin/teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Teachers</span>
+                      <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/teacher-attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Attendance</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/teacher-timetable" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/teacher-timetable') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/teacher-timetable') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>My Timetable</span>
                     </Link>
                   </li>
                   <li>
@@ -444,6 +510,20 @@ function Layout({ children }) {
                     >
                       <BellRing className={`h-5 w-5 mr-3 ${isActive('/admin/notices') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Notifications</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/teacher-notifications" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/teacher-notifications') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <BellRing className={`h-5 w-5 mr-3 ${isActive('/teacher-notifications') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Notifications & Events</span>
                     </Link>
                   </li>
                   <li>

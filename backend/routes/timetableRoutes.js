@@ -5,10 +5,11 @@ const {
     getTimetableByClass,
     createTimetable,
     updateTimetable,
-    deleteTimetable,
+    deleteTimetable,  
+    teacherTimetable,
+    getTimetableById,
     getClassesByTeacher,
-    getTeacherTimetable,
-    getTimetableById
+    
 } = require('../controllers/timetableController'); // Updated path to controllers directory
 
 // Get all timetables and create new timetable
@@ -27,11 +28,13 @@ router.route('/:id')
     .delete(deleteTimetable);
 
 // Get classes for a specific teacher
-router.route('/teacher/:teacherId/classes')
+router.route('/teacher/class/:teacherId')
     .get(getClassesByTeacher);
 
 // Get timetable for a specific teacher 
 router.route('/teacher/:teacherId')
-    .get(getTeacherTimetable);
+    .get(teacherTimetable);
+
+
 
 module.exports = router;

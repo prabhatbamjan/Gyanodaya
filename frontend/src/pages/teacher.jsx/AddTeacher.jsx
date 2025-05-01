@@ -11,6 +11,7 @@ const AddTeacher = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   
@@ -32,9 +33,10 @@ const AddTeacher = () => {
       zipCode: '',
       country: 'Nepal',
     },
-    subjects: [] // Array of subject IDs
+    subjects: [],
+    image: null  // ✅ Add image inside the object properly
   });
-
+  
   const [currentSubject, setCurrentSubject] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
 
@@ -136,13 +138,58 @@ const AddTeacher = () => {
       return;
     }
   
-    
-   
-    
     try {
-      const response = await authAxios.post('teachers/', formData);
-      console.log(formData);
-      console.log(response);
+      // Create FormData object for file upload
+      const formDataToSend = new FormData();
+      
+      // Add all text fields to FormData
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('gender', formData.gender);
+      formDataToSend.append('dob', formData.dob);
+      formDataToSend.append('joinDate', formData.joinDate);
+      formDataToSend.append('qualification', formData.qualification);
+      
+      if (formData.salary) {
+        formDataToSend.append('salary', formData.salary);
+      }
+      
+      if (formData.experience) {
+        formDataToSend.append('experience', formData.experience);
+      }
+      
+      formDataToSend.append('phone', formData.phone);
+      
+      // Add address fields
+      formDataToSend.append('address[street]', formData.address.street);
+      formDataToSend.append('address[city]', formData.address.city);
+      formDataToSend.append('address[state]', formData.address.state);
+      formDataToSend.append('address[zipCode]', formData.address.zipCode);
+      formDataToSend.append('address[country]', formData.address.country);
+      
+      // Add subject IDs to FormData
+      formData.subjects.forEach((subjectId, index) => {
+        formDataToSend.append(`subjects[${index}]`, subjectId);
+      });
+      
+      // Add the image file if selected
+      if (profileImage) {
+        formDataToSend.append('image', profileImage);
+      } else {
+        setSaving(false);
+        setError('Please upload a profile image');
+        return;
+      }
+      console.log(formDataToSend)
+      // Send the form data to the server
+      const response = await authAxios.post('teachers/', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      console.log(response.data);
       
       setTimeout(() => {
         setSaving(false);
@@ -151,8 +198,14 @@ const AddTeacher = () => {
       }, 1500);
       
     } catch (err) {
+      console.error('Error:', err);
+      if (err.response && err.response.data) {
+        console.error('Server response:', err.response.data);
+        setError(err.response.data.message || 'Failed to add teacher. Please try again.');
+      } else {
+        setError(err.message || 'Failed to add teacher. Please try again.');
+      }
       setSaving(false);
-      setError('Failed to add teacher. Please try again.');
     }
   };
 
@@ -166,149 +219,144 @@ const AddTeacher = () => {
     );
   }
   const validateForm = () => {
-        
-    // Basic validation
-    if (!formData.firstName.trim()) {
-        setError('First name is required');
-        return false;
+    if (!profileImage) {
+      setError('Please upload a profile image');
+      return false;
     }
-    if(!formData.firstName.trim().match(/^[A-Za-z\s']{2,}$/)){
+    if (!formData.firstName.trim()) {
+      setError('First name is required');
+      return false;
+    }
+    if (!formData.firstName.trim().match(/^[A-Za-z\s']{2,}$/)) {
       setError('First name must contain only letters');
       return false;
     }
     if (!formData.lastName.trim()) {
-        setError('Last name is required');
-        return false;
+      setError('Last name is required');
+      return false;
     }
-    if(!formData.lastName.trim().match(/^[A-Za-z\s']{1,}$/)){
+    if (!formData.lastName.trim().match(/^[A-Za-z\s']{1,}$/)) {
       setError('Last name must contain only letters');
       return false;
     }
     if (!formData.email.trim()) {
-        setError('Email is required');
-        return false;
+      setError('Email is required');
+      return false;
     }
-    if (!formData.email.trim().match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
+    if (!formData.email.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
       setError('Invalid email format');
       return false;
     }
-   
     if (!formData.gender) {
-        setError('Gender is required');
-        return false;
+      setError('Gender is required');
+      return false;
     }
     if (!formData.dob) {
-        setError('Date of birth is required');
-        return false;
+      setError('Date of birth is required');
+      return false;
     }
     if (!formData.joinDate) {
-        setError('Joining date is required');
-        return false;
+      setError('Joining date is required');
+      return false;
     }
     if (!formData.qualification.trim()) {
-        setError('Qualification is required');
-        return false;
+      setError('Qualification is required');
+      return false;
     }
-    
     if (!formData.phone.trim()) {
-        setError('Phone number is required');
-        return false;
+      setError('Phone number is required');
+      return false;
     }
-    else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-        setError('Phone number must be 10 digits');
-        return false;
+    if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
+      setError('Phone number must be 10 digits');
+      return false;
     }
-    
-    // Address validation
+  
+    // Address checks
     if (!formData.address.street.trim()) {
-        setError('Street address is required');
-        return false;
+      setError('Street address is required');
+      return false;
     }
     if (!formData.address.city.trim()) {
-        setError('City is required');
-        return false;
+      setError('City is required');
+      return false;
     }
     if (!formData.address.state.trim()) {
-        setError('State is required');
-        return false;
+      setError('State is required');
+      return false;
     }
     if (!formData.address.zipCode.trim()) {
-        setError('Zip code is required');
-        return false;
+      setError('Zip code is required');
+      return false;
     }
-    else if (!/^\d{5}$/.test(formData.address.zipCode.replace(/\D/g, ''))) {
+    if (!/^\d{5}$/.test(formData.address.zipCode)) {
       setError('Zip code must be 5 digits');
       return false;
-  }
-
-  if (formData.subjects.length > 2 || formData.subjects.length === 0  ) {
-    setError('You can only assign up to 2 subjects');
-    
-    return false;
-  }
-  if(formData.subjects.length === 0){
-    setError('Please assign at least one subject');
-    return false;
-  }
-  const dobDate = new Date(formData.dob);
-  const admissionDate = new Date(formData.admissionDate);
-  const currentDate = new Date();
-
- 
-
-  // Date validation
-  if (!formData.dob) {
-    setError('Date of birth is required');
-    return false;
-  }
-
-  if (!formData.joinDate) {
-    setError('Joining date is required');
-    return false;
-  }
-
-  // Check if dates are in the future
-  if (dobDate > currentDate) {
-    setError('Date of birth cannot be in the future');
-    return false;
-  }
-
-  if (joinDate > currentDate) {
-    setError('Joining date cannot be in the future');
-    return false;
-  }
-
-  // Check if dob is before admission date
-  if (dobDate >= joinDate) {
-    setError('Date of birth must be before joining date');
-    return false;
-  }
-
-  // Calculate age difference (minimum 3 years)
-  const ageDiff = admissionDate.getFullYear() - dobDate.getFullYear();
-  const monthDiff = admissionDate.getMonth() - dobDate.getMonth();
+    }
   
-  // Adjust age if birthday hasn't occurred yet in the admission year
-  const actualAge = monthDiff < 0 || 
-                   (monthDiff === 0 && admissionDate.getDate() < dobDate.getDate()) 
-                   ? ageDiff - 1 
-                   : ageDiff;
-
-  if (actualAge < 18) {
-    setError('Teacher must be at least 18 years old at joining');
-    return false;
-  }
-    
-    
-  setError('');
-  return true;
+    // Subject check
+    if (formData.subjects.length === 0) {
+      setError('Please assign at least one subject');
+      return false;
+    }
+    if (formData.subjects.length > 2) {
+      setError('You can only assign up to 2 subjects');
+      return false;
+    }
+  
+    // Date of birth and joining date validation
+    const dobDate = new Date(formData.dob);
+    const joinDate = new Date(formData.joinDate);
+    const currentDate = new Date();
+  
+    if (dobDate > currentDate) {
+      setError('Date of birth cannot be in the future');
+      return false;
+    }
+  
+    if (joinDate > currentDate) {
+      setError('Joining date cannot be in the future');
+      return false;
+    }
+  
+    if (dobDate >= joinDate) {
+      setError('Date of birth must be before joining date');
+      return false;
+    }
+  
+    // Minimum age check: 18 years at joining
+    const ageDiff = joinDate.getFullYear() - dobDate.getFullYear();
+    const monthDiff = joinDate.getMonth() - dobDate.getMonth();
+    const actualAge = (monthDiff < 0 || (monthDiff === 0 && joinDate.getDate() < dobDate.getDate()))
+      ? ageDiff - 1
+      : ageDiff;
+  
+    if (actualAge < 18) {
+      setError('Teacher must be at least 18 years old at joining');
+      return false;
+    }
+  
+    setError('');
+    return true;
   };
+
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Store the file for upload
+      setProfileImage(file);
+      // Create preview URL
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+  
 
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-6">
-          <Link to="/admin/teachers" className="text-blue-600 hover:text-blue-800 mr-4">
+          <Link to="/admin-teachers" className="text-blue-600 hover:text-blue-800 mr-4">
             <ArrowLeft className="inline mr-1" size={16} /> Back to Teachers
           </Link>
           <h1 className="text-2xl font-semibold text-gray-800">Add New Teacher</h1>
@@ -320,9 +368,35 @@ const AddTeacher = () => {
           </div>
         )}
 
-    
-
         <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg overflow-hidden">
+          {/* Profile Image Upload */}
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">Profile Image</h2>
+            <div className="flex flex-col items-center mb-4">
+              <div className="mb-4 w-40 h-40 rounded-full border-2 border-gray-300 flex items-center justify-center overflow-hidden bg-gray-100">
+                {preview ? (
+                  <img src={preview} alt="Profile Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-gray-400 flex flex-col items-center justify-center">
+                    <Upload size={40} />
+                    <span className="text-sm mt-2">No image</span>
+                  </div>
+                )}
+              </div>
+              <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+                <Upload size={16} className="mr-2" />
+                {preview ? 'Change Photo' : 'Upload Photo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </label>
+              <p className="text-xs text-gray-500 mt-2">Max size: 2MB. Formats: JPG, PNG</p>
+            </div>
+          </div>
+
           {/* Personal Information */}
           <div className="p-6 border-b border-gray-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

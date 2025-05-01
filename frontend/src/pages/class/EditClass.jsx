@@ -7,6 +7,7 @@ import authAxios from '../../utils/auth';
 function EditClass() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: '',
     grade: '',
@@ -15,9 +16,11 @@ function EditClass() {
     fee: '',
     academicYear: '',
     subjects: [],
+    classTeacher: '', // New field
   });
 
   const [subjects, setSubjects] = useState([]);
+  const [teachers, setTeachers] = useState([]); // New state for teachers
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -25,11 +28,12 @@ function EditClass() {
     const fetchClassData = async () => {
       try {
         const res = await authAxios.get(`classes/${id}`);
-        
         const classData = res.data.data;
+
         setFormData({
           ...classData,
           subjects: classData.subjects || [],
+          classTeacher: classData.classTeacher || '', // prefill
         });
       } catch (err) {
         console.error(err);
@@ -47,8 +51,43 @@ function EditClass() {
       }
     };
 
+    const fetchTeachers = async () => {
+      try {
+        const res1 = await authAxios.get(`timetables/class/${id}`);
+        const timetable = res1.data.data; // timetable is an array
+        const res = await authAxios.get('teachers/');
+        const allTeachers = res.data.data;
+    
+        const teacherIdsInTimetable = new Set();
+    
+        timetable.forEach((dayData) => {
+          if (Array.isArray(dayData.periods)) {
+            dayData.periods.forEach((period) => {
+              if (period.teacher && period.teacher._id) {
+                teacherIdsInTimetable.add(period.teacher._id);
+              }
+            });
+          }
+        });
+    
+        // 🔍 Filter only teachers used in timetable
+        const filteredTeachers = allTeachers.filter((teacher) =>
+          teacherIdsInTimetable.has(teacher._id)
+        );
+    
+        setTeachers(filteredTeachers); // Show only relevant teachers
+        console.log('Filtered teachers in timetable:', filteredTeachers);
+      } catch (error) {
+        console.error('Error fetching teachers:', error);
+        setError('Failed to fetch teachers.');
+      }
+    };
+    
+    
+
     fetchClassData();
     fetchSubjects();
+    fetchTeachers();
   }, [id]);
 
   const handleInputChange = (e) => {
@@ -82,9 +121,9 @@ function EditClass() {
     setIsLoading(true);
     setError(null);
 
-    const { name, grade, section, subjects, academicYear, fee, roomNumber } = formData;
+    const { name, grade, section, subjects, academicYear, fee, roomNumber, classTeacher } = formData;
 
-    if (!name || !grade || !section || !academicYear || !fee || !roomNumber || !subjects) {
+    if (!name || !grade || !section || !academicYear || !fee || !roomNumber || !subjects || !classTeacher) {
       setError('Please fill all required fields.');
       setIsLoading(false);
       return;
@@ -116,6 +155,7 @@ function EditClass() {
         academicYear,
         fee,
         roomNumber,
+        classTeacher,
         subjects: subjects.map(sub => (typeof sub === 'string' ? sub : sub._id)),
       };
 
@@ -145,7 +185,7 @@ function EditClass() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Form Fields (same as AddClass) */}
+            {/* Name & Grade */}
             {["name", "grade"].map((field) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -168,6 +208,7 @@ function EditClass() {
               </div>
             ))}
 
+            {/* Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Section <span className="text-red-500">*</span>
@@ -188,6 +229,7 @@ function EditClass() {
               </select>
             </div>
 
+            {/* Room Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Room Number <span className="text-red-500">*</span>
@@ -208,6 +250,7 @@ function EditClass() {
               </select>
             </div>
 
+            {/* Academic Year */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Academic Year <span className="text-red-500">*</span>
@@ -224,6 +267,7 @@ function EditClass() {
               />
             </div>
 
+            {/* Fee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fee <span className="text-red-500">*</span>
@@ -237,6 +281,27 @@ function EditClass() {
                 min="0"
                 required
               />
+            </div>
+
+            {/* Class Teacher */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Class Teacher <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="classTeacher"
+                value={formData.classTeacher}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2"
+                required
+              >
+                <option value="">Select Teacher</option>
+                {teachers.map((teacher) => (
+                  <option key={teacher._id} value={teacher._id}>
+                    {teacher.firstName}  {teacher.lastName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -264,6 +329,7 @@ function EditClass() {
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="flex justify-end">
             <button
               type="submit"

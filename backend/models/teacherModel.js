@@ -2,6 +2,12 @@ const mongoose = require('mongoose');
 
 // Teacher Schema Definition
 const teacherSchema = new mongoose.Schema({
+  imageUrl:{
+    type:String,
+    
+    require:[true,'uplode photo']
+
+  },
     firstName: {
         type: String,
         required: [true, 'First name is required'],

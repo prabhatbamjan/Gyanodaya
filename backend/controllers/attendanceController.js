@@ -161,7 +161,7 @@ exports.createAttendance = async (req, res) => {
         console.error('Error creating attendance record:', error);
         res.status(500).json({
             success: false,
-            message: 'Failed to create attendance record',
+            message: error.message,
             error: error.message
         });
     }
@@ -213,6 +213,54 @@ exports.updateAttendance = async (req, res) => {
     }
 };
 
+
+
+
+exports.getAttendanceByTeacher = async (req, res) => {
+  try {
+    const teacherId = req.params.teacherId; // or req.user.id if using auth
+
+    const attendanceRecords = await Attendance.find({ teacher: teacherId })
+      .populate('class', 'name section')        // optional: to get class info
+      .populate('subject', 'name')              // optional: to get subject name
+      .populate('records.student', 'firstName lastName rollNumber'); // optional: get student details
+
+    res.status(200).json({
+      success: true,
+      data: attendanceRecords
+    });
+  } catch (err) {
+    console.error('Error fetching attendance by teacher:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch attendance records',
+      error: err.message
+    });
+  }
+};
+exports.getAttendanceById =async(req,res) =>{
+    
+    try {
+        const attendanceId = req.params.id;
+    
+        const attendance = await Attendance.findById(attendanceId)
+          .populate('class', 'name section academicYear')
+          .populate('subject', 'name')
+          .populate('records.student', 'firstName lastName rollNumber')
+          .populate('records.markedBy', 'firstName lastName')
+          .populate('teacher', 'firstName lastName');
+    
+        if (!attendance) {
+          return res.status(404).json({ success: false, message: 'Attendance not found' });
+        }
+    
+        res.json({ success: true, data: attendance });
+      } catch (err) {
+        console.error('Error fetching attendance:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
+      }
+
+}
 // Delete attendance record
 exports.deleteAttendance = async (req, res) => {
     try {

@@ -8,14 +8,14 @@ const {
     deleteEvent,
     getEventById
 } = require('../controllers/eventController');
-
+const authController = require('../middleware/auth');
 // Public routes
 router.get('/', getAllEvents);
 router.get('/class/:classId', getEventsByClass);
 router.get('/:id', getEventById);
 
 // Protected routes (require authentication)
-
+router.use(authController.protect); 
 // Admin only routes
 router.post('/',  createEvent);
 router.put('/:id',  updateEvent);

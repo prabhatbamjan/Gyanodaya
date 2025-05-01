@@ -1,4 +1,6 @@
 const Product = require('../models/productModel');
+const Cloudinary = require('../middleware/cloudnery');
+const fs = require('fs');
 
 // Get all products
 exports.getAllProducts = async (req, res) => {
@@ -52,78 +54,123 @@ exports.getProductById = async (req, res) => {
 // Create new product
 exports.createProduct = async (req, res) => {
     try {
-        const { name, description, price, category, stock, image } = req.body;
+        const data = req.body;
+        const imagePath = req.file?.path;
+
+        if (!imagePath) {
+            return res.status(400).json({ success: false, message: 'Image file is required' });
+        }
 
         // Validate required fields
-        if (!name || !description || !price || !category || !stock) {
-            return res.status(400).json({
-                success: false,
-                message: 'Please provide all required fields'
-            });
+        const requiredFields = ['name', 'description', 'sellingprice', 'costprice', 'category', 'stock'];
+        for (let field of requiredFields) {
+            if (!data[field]) {
+                return res.status(400).json({ success: false, message: `Missing field: ${field}` });
+            }
         }
 
-        // Validate price and stock
-        if (price < 0 || stock < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Price and stock cannot be negative'
-            });
+        if (data.sellingprice < 0 || data.costprice < 0 || data.stock < 0) {
+            return res.status(400).json({ success: false, message: 'Prices and stock cannot be negative' });
         }
+
+        // Upload to Cloudinary
+        const result = await Cloudinary.uploader.upload(imagePath, { folder: 'Products' });
+        fs.unlinkSync(imagePath); // delete local file
 
         const product = await Product.create({
-            ...req.body,
-            createdBy: req.user._id
+            name: data.name,
+            description: data.description,
+            sellingPrice: data.sellingprice,
+            costPrice: data.costprice,
+            category: data.category,
+            stock: data.stock,
+            status: data.status || 'available',
+            image: result,
+            createdBy: req.user?._id
         });
 
         const populatedProduct = await Product.findById(product._id)
             .populate('createdBy', 'firstName lastName');
 
-        res.status(201).json({
-            success: true,
-            data: populatedProduct
-        });
+        res.status(201).json({ success: true, data: populatedProduct });
     } catch (error) {
         console.error('Error creating product:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to create product',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to create product', error: error.message });
     }
 };
 
 // Update product
 exports.updateProduct = async (req, res) => {
     try {
-        const { price, stock } = req.body;
+        const data = req.body;
+        const imagePath = req.file?.path;
+        const productId = req.params.id;
 
-        // Validate price and stock if provided
-        if (price !== undefined && price < 0) {
-            return res.status(400).json({
+        // Check if product exists
+        const existingProduct = await Product.findById(productId);
+        if (!existingProduct) {
+            return res.status(404).json({
                 success: false,
-                message: 'Price cannot be negative'
+                message: 'Product not found'
             });
         }
 
-        if (stock !== undefined && stock < 0) {
+        // Validate price and stock if provided
+        if (data.sellingprice !== undefined && data.sellingprice < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Selling price cannot be negative'
+            });
+        }
+
+        if (data.costprice !== undefined && data.costprice < 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cost price cannot be negative'
+            });
+        }
+
+        if (data.stock !== undefined && data.stock < 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Stock cannot be negative'
             });
         }
 
+        // Create update object
+        const updateData = {
+            name: data.name,
+            description: data.description,
+            sellingPrice: data.sellingprice,
+            costPrice: data.costprice,
+            category: data.category,
+            stock: data.stock,
+            status: data.status
+        };
+
+        // If new image is uploaded
+        if (imagePath) {
+            try {
+                // Upload to Cloudinary
+                const result = await Cloudinary.uploader.upload(imagePath, { folder: 'Products' });
+                fs.unlinkSync(imagePath); // delete local file
+                updateData.image = result;
+            } catch (uploadError) {
+                console.error('Error uploading image:', uploadError);
+                return res.status(400).json({
+                    success: false,
+                    message: 'Failed to upload image',
+                    error: uploadError.message
+                });
+            }
+        }
+
+        // Update product
         const product = await Product.findByIdAndUpdate(
-            req.params.id,
-            req.body,
+            productId,
+            updateData,
             { new: true, runValidators: true }
         ).populate('createdBy', 'firstName lastName');
-
-        if (!product) {
-            return res.status(404).json({
-                success: false,
-                message: 'Product not found'
-            });
-        }
 
         res.status(200).json({
             success: true,

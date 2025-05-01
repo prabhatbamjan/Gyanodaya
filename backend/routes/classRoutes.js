@@ -7,7 +7,7 @@ const {
   updateClass,
   deleteClass,
   addSubjectsToClass
-} = require('../contorollers/classController');
+} = require('../controllers/classController');
 
 // Routes
 router.route('/')

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import authAxios from '../utils/auth';
+import  axios  from 'axios';
 import { BookOpen, Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -27,7 +27,8 @@ function Login() {
     setError('');
 
     try {
-      const response = await authAxios.post('users/login', {
+      const response = await axios.post('http://localhost:5000/api/users/login', {
+     
         email: formData.email,
         password: formData.password
       });

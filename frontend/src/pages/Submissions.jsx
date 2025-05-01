@@ -1,353 +1,402 @@
-// import React, { useState, useEffect } from 'react';
-// import Layout from '../components/layoutes/adminlayout';
-// import authAxios from '../utils/auth';
-// import { useNavigate } from 'react-router-dom';
-// import { useSelector } from 'react-redux';
-// import { Check, X, FileText, Clock, AlertTriangle, Download, Eye } from 'lucide-react';
-// import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Filter,
+  FileText,
+  User,
+  Calendar,
+  Clock,
+  Check,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import Layout from "../components/layoutes/teacherlayout";
+import authAxios from "../utils/auth";
+import Loader from "../components/Loader";
 
-// const statusColors = {
-//   submitted: 'bg-blue-100 text-blue-800',
-//   graded: 'bg-green-100 text-green-800',
-//   returned: 'bg-amber-100 text-amber-800',
-//   resubmitted: 'bg-purple-100 text-purple-800'
-// };
+const Submissions = () => {
+  const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState(null);
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-// const statusIcons = {
-//   submitted: <FileText size={16} />,
-//   graded: <Check size={16} />,
-//   returned: <AlertTriangle size={16} />,
-//   resubmitted: <Clock size={16} />
-// };
+  useEffect(() => {
+    fetchData();
+  }, [page]);
 
-// const Submissions = () => {
-//   const navigate = useNavigate();
-//   const { user } = useSelector((state) => state.auth);
-//   const [submissions, setSubmissions] = useState([]);
-//   const [filteredSubmissions, setFilteredSubmissions] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [classes, setClasses] = useState([]);
-//   const [subjects, setSubjects] = useState([]);
-//   const [assignments, setAssignments] = useState([]);
-//   const [filters, setFilters] = useState({
-//     classId: '',
-//     subjectId: '',
-//     assignmentId: '',
-//     status: '',
-//     searchTerm: ''
-//   });
+  // When filters change, reset to page 1
+  useEffect(() => {
+    setPage(1);
+    fetchData();
+  }, [classFilter, subjectFilter, statusFilter, searchTerm, dateRange]);
 
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         setLoading(true);
-//         const [submissionsRes, classesRes, subjectsRes, assignmentsRes] = await Promise.all([
-//           authAxios.get('/submissions'),
-//           authAxios.get('/classes'),
-//           authAxios.get('/subjects'),
-//           authAxios.get('/assignments')
-//         ]);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-//         setSubmissions(submissionsRes.data.data.submissions);
-//         setFilteredSubmissions(submissionsRes.data.data.submissions);
-//         setClasses(classesRes.data.data.classes);
-//         setSubjects(subjectsRes.data.data.subjects);
-//         setAssignments(assignmentsRes.data.data.assignments);
-//       } catch (error) {
-//         console.error('Error fetching data:', error);
-//         toast.error('Failed to load submissions');
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+      // Prepare query parameters
+      const params = new URLSearchParams();
+      params.append("page", page);
+      params.append("limit", 10);
+      
+      if (searchTerm) params.append("search", searchTerm);
+      if (classFilter) params.append("class", classFilter);
+      if (subjectFilter) params.append("subject", subjectFilter);
+      if (statusFilter) params.append("status", statusFilter);
+      if (dateRange.from) params.append("fromDate", dateRange.from);
+      if (dateRange.to) params.append("toDate", dateRange.to);
 
-//     fetchData();
-//   }, []);
+      // Fetch submissions
+      const submissionsRes = await authAxios.get(`/submissions/teacher?${params}`);
+      
+      setSubmissions(submissionsRes.data.data || []);
+      setTotalPages(submissionsRes.data.totalPages || 1);
 
-//   useEffect(() => {
-//     let result = [...submissions];
+      // Fetch classes and subjects for filters
+      const [classesRes, subjectsRes] = await Promise.all([
+        authAxios.get("/classes/teacher"),
+        authAxios.get("/subjects/teacher")
+      ]);
 
-//     if (filters.classId) {
-//       // Find assignments for this class and filter submissions
-//       const classAssignments = assignments.filter(a => a.class === filters.classId).map(a => a._id);
-//       result = result.filter(s => classAssignments.includes(s.assignment));
-//     }
+      setClasses(classesRes.data.data || []);
+      setSubjects(subjectsRes.data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch submissions:", err);
+      setError("Failed to load submissions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-//     if (filters.subjectId) {
-//       // Find assignments for this subject and filter submissions
-//       const subjectAssignments = assignments.filter(a => a.subject === filters.subjectId).map(a => a._id);
-//       result = result.filter(s => subjectAssignments.includes(s.assignment));
-//     }
+  const clearFilters = () => {
+    setSearchTerm("");
+    setClassFilter("");
+    setSubjectFilter("");
+    setStatusFilter("");
+    setDateRange({ from: "", to: "" });
+  };
 
-//     if (filters.assignmentId) {
-//       result = result.filter(s => s.assignment === filters.assignmentId);
-//     }
+  const handleSearch = (e) => {
+    e.preventDefault();
+    fetchData();
+  };
 
-//     if (filters.status) {
-//       result = result.filter(s => s.status === filters.status);
-//     }
+  const formatDate = (dateString) => {
+    const options = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
 
-//     if (filters.searchTerm) {
-//       const term = filters.searchTerm.toLowerCase();
-//       result = result.filter(s => 
-//         s.student?.name?.toLowerCase().includes(term) ||
-//         assignments.find(a => a._id === s.assignment)?.title?.toLowerCase().includes(term)
-//       );
-//     }
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Student Submissions</h1>
+          <p className="mt-1 text-sm text-gray-500">View and grade submissions from your students</p>
+        </div>
 
-//     setFilteredSubmissions(result);
-//   }, [filters, submissions, assignments]);
+        {/* Search and Filters */}
+        <div className="mb-6 bg-white rounded-lg shadow p-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <form onSubmit={handleSearch} className="flex mb-4 md:mb-0">
+              <div className="relative flex-grow">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Search student or assignment..."
+                />
+              </div>
+              <button
+                type="submit"
+                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Search
+              </button>
+            </form>
+            
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md px-3 py-2"
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {showFilters ? "Hide Filters" : "Show Filters"}
+            </button>
+          </div>
 
-//   const handleFilterChange = (e) => {
-//     const { name, value } = e.target;
-//     setFilters({
-//       ...filters,
-//       [name]: value
-//     });
-//   };
+          {/* Filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Class
+                  </label>
+                  <select
+                    value={classFilter}
+                    onChange={(e) => setClassFilter(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Classes</option>
+                    {classes.map((cls) => (
+                      <option key={cls._id} value={cls._id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Subject
+                  </label>
+                  <select
+                    value={subjectFilter}
+                    onChange={(e) => setSubjectFilter(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Subjects</option>
+                    {subjects.map((subject) => (
+                      <option key={subject._id} value={subject._id}>
+                        {subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="submitted">Submitted (Not Graded)</option>
+                    <option value="graded">Graded</option>
+                    <option value="late">Late Submissions</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date Range
+                  </label>
+                  <div className="flex space-x-2">
+                    <input
+                      type="date"
+                      value={dateRange.from}
+                      onChange={(e) => setDateRange({ ...dateRange, from: e.target.value })}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="From"
+                    />
+                    <input
+                      type="date"
+                      value={dateRange.to}
+                      onChange={(e) => setDateRange({ ...dateRange, to: e.target.value })}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="To"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md px-3 py-2"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
-//   const resetFilters = () => {
-//     setFilters({
-//       classId: '',
-//       subjectId: '',
-//       assignmentId: '',
-//       status: '',
-//       searchTerm: ''
-//     });
-//   };
+        {/* Content Area */}
+        {error ? (
+          <div className="bg-red-50 p-4 rounded-md text-red-800 mb-6">
+            <div className="flex">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              <p>{error}</p>
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="flex justify-center py-12">
+            <Loader />
+          </div>
+        ) : submissions.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-1">No submissions found</h3>
+            <p className="text-gray-500">
+              There are no submissions matching your search criteria.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Submissions Table */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Assignment
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Submitted
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Marks
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {submissions.map((submission) => (
+                      <tr key={submission._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-bold">
+                              {submission.student?.firstName?.charAt(0) || "S"}
+                            </div>
+                            <div className="ml-3">
+                              <div className="text-sm font-medium text-gray-900">
+                                {submission.student?.firstName} {submission.student?.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {submission.student?.class?.name || "No class"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-900 font-medium">
+                            {submission.assignment?.title || "Unknown assignment"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {submission.assignment?.subjectId?.name || "No subject"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {formatDate(submission.submittedAt || submission.createdAt)}
+                          </div>
+                          {submission.lateSubmission && (
+                            <span className="px-2 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800">
+                              Late
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            submission.status === 'graded' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {submission.status === 'graded' ? 'Graded' : 'Submitted'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {submission.marks !== undefined ? (
+                            <div className="text-sm text-gray-900">
+                              {submission.marks} / {submission.assignment?.totalMarks || '?'}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500">Not graded</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <Link 
+                            to={`/submissions/${submission._id}`} 
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            {submission.status === 'graded' ? 'View Details' : 'Grade'}
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-//   const viewSubmission = (id) => {
-//     navigate(`/submission/${id}`);
-//   };
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between">
+                <div className="text-sm text-gray-700">
+                  Showing page <span className="font-medium">{page}</span> of{" "}
+                  <span className="font-medium">{totalPages}</span>
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
+                      page === 1
+                        ? "border-gray-300 text-gray-300 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className={`inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium ${
+                      page === totalPages
+                        ? "border-gray-300 text-gray-300 cursor-not-allowed"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Layout>
+  );
+};
 
-//   const getAssignmentTitle = (assignmentId) => {
-//     const assignment = assignments.find(a => a._id === assignmentId);
-//     return assignment ? assignment.title : 'Unknown Assignment';
-//   };
-
-//   const getStudentName = (studentId) => {
-//     const submission = submissions.find(s => s._id === studentId);
-//     return submission?.student?.name || 'Unknown Student';
-//   };
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return 'Not submitted';
-//     const date = new Date(dateString);
-//     return date.toLocaleString('en-US', {
-//       year: 'numeric',
-//       month: 'short',
-//       day: 'numeric',
-//       hour: '2-digit',
-//       minute: '2-digit'
-//     });
-//   };
-
-//   const getStatusBadge = (status) => {
-//     return (
-//       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`}>
-//         {statusIcons[status]}
-//         {status.charAt(0).toUpperCase() + status.slice(1)}
-//       </span>
-//     );
-//   };
-
-//   if (loading) {
-//     return (
-//       <Layout>
-//         <div className="flex justify-center items-center h-64">
-//           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-//         </div>
-//       </Layout>
-//     );
-//   }
-
-//   return (
-//     <Layout>
-//       <div className="container mx-auto px-4 py-8">
-//         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-//           <h1 className="text-2xl font-bold text-gray-900">Student Submissions</h1>
-//           <div className="mt-4 md:mt-0">
-//             <button
-//               onClick={resetFilters}
-//               className="ml-2 px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md text-gray-700"
-//             >
-//               Reset Filters
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* Filters */}
-//         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-//             <div>
-//               <label htmlFor="classId" className="block text-sm font-medium text-gray-700 mb-1">
-//                 Class
-//               </label>
-//               <select
-//                 id="classId"
-//                 name="classId"
-//                 value={filters.classId}
-//                 onChange={handleFilterChange}
-//                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-//               >
-//                 <option value="">All Classes</option>
-//                 {classes.map((cls) => (
-//                   <option key={cls._id} value={cls._id}>
-//                     {cls.name}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label htmlFor="subjectId" className="block text-sm font-medium text-gray-700 mb-1">
-//                 Subject
-//               </label>
-//               <select
-//                 id="subjectId"
-//                 name="subjectId"
-//                 value={filters.subjectId}
-//                 onChange={handleFilterChange}
-//                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-//               >
-//                 <option value="">All Subjects</option>
-//                 {subjects.map((subject) => (
-//                   <option key={subject._id} value={subject._id}>
-//                     {subject.name}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label htmlFor="assignmentId" className="block text-sm font-medium text-gray-700 mb-1">
-//                 Assignment
-//               </label>
-//               <select
-//                 id="assignmentId"
-//                 name="assignmentId"
-//                 value={filters.assignmentId}
-//                 onChange={handleFilterChange}
-//                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-//               >
-//                 <option value="">All Assignments</option>
-//                 {assignments.map((assignment) => (
-//                   <option key={assignment._id} value={assignment._id}>
-//                     {assignment.title}
-//                   </option>
-//                 ))}
-//               </select>
-//             </div>
-
-//             <div>
-//               <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-//                 Status
-//               </label>
-//               <select
-//                 id="status"
-//                 name="status"
-//                 value={filters.status}
-//                 onChange={handleFilterChange}
-//                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-//               >
-//                 <option value="">All Statuses</option>
-//                 <option value="submitted">Submitted</option>
-//                 <option value="graded">Graded</option>
-//                 <option value="returned">Returned</option>
-//                 <option value="resubmitted">Resubmitted</option>
-//               </select>
-//             </div>
-
-//             <div>
-//               <label htmlFor="searchTerm" className="block text-sm font-medium text-gray-700 mb-1">
-//                 Search
-//               </label>
-//               <input
-//                 type="text"
-//                 id="searchTerm"
-//                 name="searchTerm"
-//                 value={filters.searchTerm}
-//                 onChange={handleFilterChange}
-//                 placeholder="Search by student name or assignment"
-//                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-//               />
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Submissions Table */}
-//         {filteredSubmissions.length === 0 ? (
-//           <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-//             <p className="text-gray-500">No submissions found matching the selected filters.</p>
-//           </div>
-//         ) : (
-//           <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-//             <div className="overflow-x-auto">
-//               <table className="min-w-full divide-y divide-gray-200">
-//                 <thead className="bg-gray-50">
-//                   <tr>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Assignment
-//                     </th>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Student
-//                     </th>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Submitted At
-//                     </th>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Status
-//                     </th>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Grade
-//                     </th>
-//                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                       Actions
-//                     </th>
-//                   </tr>
-//                 </thead>
-//                 <tbody className="bg-white divide-y divide-gray-200">
-//                   {filteredSubmissions.map((submission) => (
-//                     <tr key={submission._id} className="hover:bg-gray-50">
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-//                         {getAssignmentTitle(submission.assignment)}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                         {submission.student.name}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                         {formatDate(submission.submittedAt)}
-//                         {submission.lateSubmission && (
-//                           <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-//                             Late
-//                           </span>
-//                         )}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                         {getStatusBadge(submission.status)}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-//                         {submission.marks ? `${submission.marks}/100` : '-'}
-//                       </td>
-//                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-//                         <button
-//                           onClick={() => viewSubmission(submission._id)}
-//                           className="text-indigo-600 hover:text-indigo-900 mr-3"
-//                           title="View Submission"
-//                         >
-//                           <Eye size={18} />
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </Layout>
-//   );
-// };
-
-// export default Submissions; 
+export default Submissions; 

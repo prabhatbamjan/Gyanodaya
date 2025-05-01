@@ -188,8 +188,8 @@ const TeacherDashboard = () => {
                             <TableCell>{new Date(a.dueDate).toLocaleDateString()}</TableCell>
                             <TableCell>{a.submittedCount}/{a.totalStudents}</TableCell>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <Link to="#" className="text-blue-600 hover:text-blue-800 mr-3">View</Link>
-                              <Link to="#" className="text-green-600 hover:text-green-800">Grade</Link>
+                              <Link to={`/assignments/edit/${a._id}`} className="text-blue-600 hover:text-blue-800 mr-3">View</Link>
+                              <Link to={`/assignments/grading/${a._id}`} className="text-green-600 hover:text-green-800">Grade</Link>
                             </td>
                           </tr>
                         ))}
@@ -201,7 +201,7 @@ const TeacherDashboard = () => {
               )}
               {assignments.length > 5 && (
                 <div className="mt-4 text-right">
-                  <Link to="#" className="inline-flex items-center text-blue-600 hover:text-blue-800">
+                  <Link to="/assignments" className="inline-flex items-center text-blue-600 hover:text-blue-800">
                     View all assignments
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Link>

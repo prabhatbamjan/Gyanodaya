@@ -1,10 +1,15 @@
 const Class = require('../models/classModel');
+const Student = require('../models/studentModel');
 const Subject = require('../models/subjectModel');
+const Timetable = require('../models/timetableModel');
+const Teacher= require('../models/teacherModel');
+
 
 // Get all classes
 exports.getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find()
+    .populate('classTeacher', 'firstName lastName')
    
     
     res.status(200).json({
@@ -27,7 +32,7 @@ exports.getClassById = async (req, res) => {
     const classObj = await Class.findById(req.params.id)
       .populate('subjects')
       .populate('classTeacher', 'firstName lastName email')
-      .populate('students', 'firstName lastName rollNumber');
+      .populate('students', 'firstName lastName email');
 
     if (!classObj) {
       return res.status(404).json({
@@ -120,7 +125,7 @@ exports.createClass = async (req, res) => {
 // Update class
 exports.updateClass = async (req, res) => {
   try {
-    const { subjects } = req.body;
+    const { subjects, classTeacher } = req.body;
     
     // Validate subjects if provided
     if (subjects && subjects.length > 0) {
@@ -133,6 +138,14 @@ exports.updateClass = async (req, res) => {
         });
       }
     }
+    const teacherAvailable = await Class.findOne({ classTeacher: classTeacher });
+    if (teacherAvailable) {
+      return res.status(400).json({
+        success: false,
+        message: 'Teacher already assigned to another class'
+      });
+    }
+  
     
     const classObj = await Class.findByIdAndUpdate(
       req.params.id,
@@ -166,18 +179,32 @@ exports.updateClass = async (req, res) => {
 // Delete class
 exports.deleteClass = async (req, res) => {
   try {
-    const classObj = await Class.findByIdAndDelete(req.params.id);
-    
+    const id = req.params.id;
+
+    // Delete related timetables
+    await Timetable.deleteMany({ class : id }); // Assuming you use `classId` in timetable
+
+    // Remove class from teachers who have it
+    await Teacher.updateMany(
+      { class: id },
+      { $pull: { class: id } }
+    );
+
+    // Remove class from students (or delete students if needed)
+    await Student.deleteMany({ class: id });
+
+    // Now delete the class itself
+    const classObj = await Class.findByIdAndDelete(id);
     if (!classObj) {
       return res.status(404).json({
         success: false,
         message: 'Class not found'
       });
     }
-    
+
     res.status(200).json({
       success: true,
-      message: 'Class deleted successfully'
+      message: 'Class and related data deleted successfully'
     });
   } catch (error) {
     res.status(500).json({
@@ -187,6 +214,7 @@ exports.deleteClass = async (req, res) => {
     });
   }
 };
+
 
 // Add subjects to class
 exports.addSubjectsToClass = async (req, res) => {

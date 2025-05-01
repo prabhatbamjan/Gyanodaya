@@ -144,6 +144,40 @@ function EditTimetable() {
         }
       }
     }
+    if ((field === 'teacher' || field === 'subject') && value) {
+      const teacherId = field === 'teacher' ? value : updatedPeriods[index].teacher;
+      const subjectId = field === 'subject' ? value : updatedPeriods[index].subject;
+
+      if (teacherId && subjectId) {
+        const isDuplicateTeacherSubject = updatedPeriods.some((period, i) =>
+          i !== index &&
+          period.teacher === teacherId &&
+          period.subject === subjectId
+        );
+
+        const isDuplicateSubject = updatedPeriods.some((period, i) =>
+          i !== index &&
+          period.subject === subjectId
+        );
+
+        if (isDuplicateTeacherSubject) {
+          setError('This teacher is already assigned to this subject in another period.');
+          return;
+        }
+
+        if (isDuplicateSubject) {
+          setError('This subject is already assigned to another period.');
+          return;
+        }
+      }
+    }
+    if (field === 'subject') {
+      const selectedClass = classes.find(c => c._id === formData.class);
+      if (selectedClass && !selectedClass.subjects.includes(value)) {
+        setError('Selected subject is not available for this class.');
+        return;
+      }
+    }
 
     setError(null);
     setFormData(prev => ({
@@ -418,17 +452,25 @@ function EditTimetable() {
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Subject</label>
                       <select
-                        className="border rounded px-2 py-1 w-full"
-                        value={period.subject}
-                        onChange={(e) => handlePeriodChange(index, 'subject', e.target.value)}
-                      >
-                        <option value="">Select Subject</option>
-                        {subjects.map((subject) => (
-                          <option key={subject._id} value={subject._id}>
-                            {subject.name}
+                    className="border rounded px-2 py-1 w-full"
+                    value={period.subject}
+                    onChange={(e) => handlePeriodChange(index, 'subject', e.target.value)}
+                    disabled={!period.teacher}
+                    required
+                  >
+                    <option value="">Select Subject</option>
+                    {period.teacher && teachers
+                      .find(t => t._id === period.teacher)
+                      ?.subjects
+                      .map(subId => {
+                        const sub = subjects.find(s => s._id === subId);
+                        return sub ? (
+                          <option key={sub._id} value={sub._id}>
+                            {sub.name}
                           </option>
-                        ))}
-                      </select>
+                        ) : null;
+                      })}
+                    </select>
                     </div>
 
                     <div>

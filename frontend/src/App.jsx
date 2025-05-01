@@ -15,6 +15,7 @@ import ForgotPassword from './pages/forgotpassword';
 import Class from './pages/class/class';
 import AddClass from './pages/class/addClass';
 import EditClass from './pages/class/EditClass';
+import ViewClass from './pages/class/ClassDetails';
 import Teacher from './pages/teacher.jsx/teacher';
 import TeacherDetails from './pages/teacher.jsx/TeacherDetails';
 import AddTeacher from './pages/teacher.jsx/AddTeacher';
@@ -22,7 +23,7 @@ import EditTeacher from './pages/teacher.jsx/EditTeacher';
 import Student from './pages/student/Students';
 import AddStudent from './pages/student/AddStudent';
 import EditStudent from './pages/student/EditStudent';
-import ViewClass from './pages/class/ClassDetails';
+import ViewStudent from './pages/student/StudentDetails';
 import Timetable from './pages/timetable/TimeTable';
 import AddTimetable from './pages/timetable/addTimeTable';
 import ViewTimetable from './pages/timetable/ViewTimetable';
@@ -41,16 +42,21 @@ import EditEvent from './pages/events/EditEvent';
 // import AddOrder from './pages/orders/AddOrder';
 // import EditOrder from './pages/orders/EditOrder';
 import Product from './pages/products/ProductsPage';
-import Addproduct from './pages/products/AddProduct'
-import Editproduct from './pages/products/EditProduct'
-
+import Addproduct from './pages/products/AddProduct';
+import Editproduct from './pages/products/EditProduct';
+import Viewproduct from './pages/products/ViewProduct';
 
 import Assignment from './pages/AssignmentManagement/AssignmentManagement';
 import AddAssignment from './pages/AssignmentManagement/AssignmentForm';
 import AssignmentGrading from './pages/AssignmentManagement/AssignmentGrading';
+import TeacherNotifications from './pages/teacher/TeacherNotifications';
+import TeacherResults from './pages/teacher/TeacherResults';
+import TeacherResultForm from './pages/teacher/TeacherResultForm';
+import AdminResults from './pages/admin/AdminResults';
 // import Submissions from './pages/Submissions';
 // import SubmissionDetail from './pages/SubmissionDetail';
 // import StudentSubmission from './pages/StudentSubmission';
+// import StudentAssignments from './pages/student/StudentAssignments';
 // import AdminSubjects from './pages/admin/';
 // import AdminTeachers from './pages/admin/AdminTeachers';
 // import AdminTimetable from './pages/admin/AdminTimetable';
@@ -61,6 +67,11 @@ import AssignmentGrading from './pages/AssignmentManagement/AssignmentGrading';
 // import StudentSubjects from './pages/student/StudentSubjects';
 // import StudentTimetable from './pages/student/StudentTimetable';
 // import StudentProfile from './pages/student/StudentProfile';
+import MyClasses from './pages/teacher/MyClasses';
+import MyStudent from './pages/teacher/Mystudent';
+import TeacherAttendance from './pages/teacher/TeacherAttendance';
+import TeacherTimetable from './pages/teacher/TeacherTimetable';
+import Messages from './pages/Messages';
 
 export default function LandingPage() { 
   return (
@@ -80,11 +91,19 @@ export default function LandingPage() {
               <AdminDashboard/>
             </ProtectedRoute>
           } />  
-          <Route path="/student-dashboard" element={<ProtectedRoute requiredRoles={['student']}><StudentDashboard/></ProtectedRoute>} />
+          {/* <Route path="/student-dashboard" element={<ProtectedRoute requiredRoles={['student']}><StudentDashboard/></ProtectedRoute>} />
           <Route path="/teacher-dashboard" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherDashboard/></ProtectedRoute>} />   
-          <Route path="/parent-dashboard" element={<ProtectedRoute requiredRoles={['parent']}><ParentDashboard/></ProtectedRoute>} />
+          <Route path="/parent-dashboard" element={<ProtectedRoute requiredRoles={['parent']}><ParentDashboard/></ProtectedRoute>} /> */}
+          
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
+          <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+          <Route path="/teacher-classes" element={<MyClasses />} />
+          <Route path="/parent-dashboard" element={<ParentDashboard />} />
+
+          
+          
           <Route path="/admin-subjects" element={
-            <ProtectedRoute requiredRoles={['admin']}>
+          <ProtectedRoute requiredRoles={['admin']}>
               <Subject/>
             </ProtectedRoute>
           } />
@@ -113,8 +132,8 @@ export default function LandingPage() {
               <EditClass/>
             </ProtectedRoute>
           } />        
-          <Route path="/admin-classes/view/:id" element={
-            <ProtectedRoute requiredRoles={['admin']}>
+          <Route path="/classes/view/:id" element={
+            <ProtectedRoute requiredRoles={['admin','teacher','student','parent']}>
               <ViewClass/>
             </ProtectedRoute>
           } />
@@ -153,6 +172,11 @@ export default function LandingPage() {
               <EditStudent/>
             </ProtectedRoute>
           } />
+           <Route path="/admin-students/:id" element={
+            <ProtectedRoute >
+              <ViewStudent/>
+            </ProtectedRoute>
+          } />
           <Route path="/admin-profile" element={
             <ProtectedRoute requiredRoles={['admin']}>
               <Profile/>
@@ -189,6 +213,7 @@ export default function LandingPage() {
          <Route path="/product" element={<Product/>} />
          <Route path="/addProduct" element={<Addproduct />} />
          <Route path="/editeProduct/:id" element={<Editproduct/>} />
+         <Route path="/viewProduct/:id" element={<Viewproduct/>} />
          
     
 
@@ -200,30 +225,38 @@ export default function LandingPage() {
 
          {/* teacher */}
          <Route path="/teacher-dashboard" element={<TeacherDashboard/>} />
-
-         {/* assignment */}
-         <Route path="/assignment" element={<Assignment/>} />
-         <Route path="/assignment/add" element={<AddAssignment/>} />
-         {/* <Route path="/assignment/edit/:id" element={<ProtectedRoute element={<EditAssignment/>} allowedRoles={['teacher']} />} /> */}
-         <Route path="/assignment/grading/:id" element={<ProtectedRoute element={<AssignmentGrading/>} allowedRoles={['teacher']} />} />
+         <Route path="/teacher-students" element={<MyStudent/>} />
+         <Route path="/teacher-timetable" element={<TeacherTimetable/>} />
+         <Route path="/teacher-notifications" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherNotifications /></ProtectedRoute>} />
+         <Route path="/teacher-results" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherResults /></ProtectedRoute>} />
+         <Route path="/teacher-results/add" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherResultForm /></ProtectedRoute>} />
+         <Route path="/teacher-results/edit/:id" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherResultForm /></ProtectedRoute>} />
          
-         {/* submissions
-         <Route path="/submissions" element={
-            <ProtectedRoute requiredRoles={['admin', 'teacher']}>
-              <Submissions/>
-            </ProtectedRoute>
-         } />
-         <Route path="/submission/:id" element={
-            <ProtectedRoute requiredRoles={['admin', 'teacher']}>
-              <SubmissionDetail/>
-            </ProtectedRoute>
-         } />
-         <Route path="/assignment/submit/:id" element={
-            <ProtectedRoute requiredRoles={['student']}>
-              <StudentSubmission/>
-            </ProtectedRoute>
-         } /> */}
+         {/* teacher attendance */}
+         <Route path="/teacher-attendance" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherAttendance /></ProtectedRoute>} />
+         <Route path="/teacher-attendance/mark" element={<ProtectedRoute requiredRoles={['teacher']}><AddAttendance /></ProtectedRoute>} />
+         <Route path="/teacher-attendance/edit/:id" element={<ProtectedRoute requiredRoles={['teacher']}><EditAttendance /></ProtectedRoute>} />
+         <Route path="/teacher-attendance/view/:id" element={<ProtectedRoute requiredRoles={['teacher']}><ViewAttendance /></ProtectedRoute>} />
         
+         {/* admin results */}
+         <Route path="/admin-results" element={<ProtectedRoute requiredRoles={['admin']}><AdminResults /></ProtectedRoute>} />
+         
+         {/* assignment */}
+         <Route path="/assignments" element={<Assignment/>} />
+         <Route path="/assignments/create" element={<AddAssignment/>} />
+         <Route path="/assignments/edit/:id" element={<ProtectedRoute element={<AddAssignment/>} allowedRoles={['teacher']} />} />
+         <Route path="/assignments/grading/:id" element={<ProtectedRoute element={<AssignmentGrading/>} allowedRoles={['teacher']} />} />
+{/*          
+         submissions */}
+         {/* <Route path="/submissions" element={
+            <ProtectedRoute element={<Submissions/>} allowedRoles={['admin', 'teacher']} />
+         } />
+         <Route path="/submissions/:id" element={
+            <ProtectedRoute element={<SubmissionDetail/>} allowedRoles={['admin', 'teacher']} />
+         } />
+         <Route path="/assignments/submit/:id" element={
+            <ProtectedRoute element={<StudentSubmission/>} allowedRoles={['student']} />
+         } /> */}
          
                 
           {/* <Route path="/admin/subjects" element={<AdminSubjects />} />
@@ -239,7 +272,19 @@ export default function LandingPage() {
          
           <Route path="/student/subjects" element={<StudentSubjects />} />
           <Route path="/student/timetable" element={<StudentTimetable />} />
-          <Route path="/student/profile" element={<StudentProfile />} /> */}
+          <Route path="/student/profile" element={<StudentProfile //>} /> */}
+
+          {/* student assignments */}
+          {/* <Route path="/student/assignments" element={
+            <ProtectedRoute element={<StudentAssignments/>} allowedRoles={['student']} />
+          } /> */}
+
+          {/* chat/messaging */}
+          <Route path="/messages" element={
+            <ProtectedRoute requiredRoles={['admin', 'teacher', 'student', 'parent']}>
+              <Messages />
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
    

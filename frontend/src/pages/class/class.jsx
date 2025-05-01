@@ -22,6 +22,7 @@ function AdminClasses() {
       setIsLoading(true);
       try {
         const response = await authAxios.get('classes/');
+        
         setClasses(response.data.data);
         setError(null);
       } catch (err) {
@@ -45,11 +46,9 @@ function AdminClasses() {
     (cls.name && (isNumericSearch ? cls.name === Number(searchTerm) : cls.name.toString().toLowerCase().includes(searchLower))) ||
     cls.section?.toLowerCase().includes(searchLower) ||
     `Grade ${cls.grade}`.toLowerCase().includes(searchLower) ||
-    cls.classTeacher?.name?.toLowerCase().includes(searchLower) ||
-    cls.subjectTeachers?.some(st =>
-      st.teacher?.name?.toLowerCase().includes(searchLower) ||
-      st.subjectName?.toLowerCase().includes(searchLower)
-    )
+    cls.classTeacher?.firstNamename?.toLowerCase().includes(searchLower) ||
+    cls.classTeacher?.lastName?.toLowerCase().includes(searchLower) 
+ 
   );
 });
 
@@ -67,7 +66,8 @@ function AdminClasses() {
       setClasses(classes.filter(classItem => classItem._id !== classToDelete._id)); // Update the state after deletion
       setShowDeleteModal(false); // Close the modal after deletion
     } catch (err) {
-      alert("Error deleting class");
+      console.error("Error deleting class:", err.response?.data || err.message);
+  alert(err.response?.data?.message || "Error deleting class");
     } finally {
       setIsLoading(false); // Always set loading state to false, whether success or failure
     }
@@ -113,7 +113,7 @@ function AdminClasses() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by class, section, subject, or teacher..."
+                  placeholder="Search by class, section, classteacher..."
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
@@ -156,8 +156,10 @@ function AdminClasses() {
                         <div className="text-sm text-gray-500">Grade {cls.grade}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{cls.classTeacher?.name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{cls.classTeacher?.subject || 'N/A'}</div>
+                      <div className="text-sm text-gray-900">
+  {cls.classTeacher ? `${cls.classTeacher.firstName} ${cls.classTeacher.lastName}` : 'N/A'}
+</div>
+                        
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{cls.students.length} students</div>
@@ -167,13 +169,13 @@ function AdminClasses() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-900">
-                          {cls.subjects?.length || 0} Subjects,{' '}
-                          {new Set(cls.subjectTeachers?.map(st => st.teacherId)).size || 0} Teachers
+                          {cls.subjects?.length || 0} Subjects{' '}
+                          
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <Link to={`/admin-classes/view/${cls._id}`} className="text-blue-600 hover:text-blue-900" title="View Details">
+                          <Link to={`/classes/view/${cls._id}`} className="text-blue-600 hover:text-blue-900" title="View Details">
                             <Eye size={18} />
                           </Link>
                           

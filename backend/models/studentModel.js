@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
+  imageUrl:{
+    type:String,
+
+    require:[true,'uplode photo']
+
+  },
   firstName: {
     type: String,
     required: [true, 'First name is required'],
@@ -56,8 +62,8 @@ const studentSchema = new mongoose.Schema({
     match: [/\S+@\S+\.\S+/, 'Please enter a valid email']
   },
   parent: {
-    type: Object,
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    ref:'Parent'
   },
   class: {
     type: mongoose.Schema.Types.ObjectId,

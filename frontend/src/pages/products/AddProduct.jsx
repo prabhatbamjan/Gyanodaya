@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Upload, Image } from 'lucide-react';
 import Layout from '../../components/layoutes/adminlayout';
 import Loader from '../../components/Loader';
 import authAxios from '../../utils/auth';
@@ -9,13 +9,15 @@ const AddProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [productImage, setProductImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '',
+    sellingprice: '',
+    costprice: '',
     category: 'other',
     stock: '',
-    image: '',
     status: 'available'
   });
 
@@ -27,37 +29,136 @@ const AddProduct = () => {
     }));
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a valid image file (JPG, PNG, WEBP)');
+        return;
+      }
+      
+      // Check file size (limit to 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+      
+      // Store the file for upload
+      setProductImage(file);
+      // Create preview URL
+      setImagePreview(URL.createObjectURL(file));
+      setError(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+  
+    if (!validateProductForm()) {
+      setLoading(false);
+      return;
+    }
+  
     try {
-      // Validate required fields
-      if (!formData.name || !formData.description || !formData.price || !formData.stock) {
-        throw new Error('Please fill in all required fields');
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('sellingprice', formData.sellingprice);
+      formDataToSend.append('costprice', formData.costprice);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('stock', formData.stock);
+      formDataToSend.append('status', formData.status);
+      
+      if (productImage) {
+        formDataToSend.append('image', productImage);
       }
-
-      // Validate price and stock
-      if (parseFloat(formData.price) < 0 || parseInt(formData.stock) < 0) {
-        throw new Error('Price and stock cannot be negative');
-      }
-
-      const response = await authAxios.post('products/', formData);
+  
+      console.log('Sending form data:', Object.fromEntries(formDataToSend));
+      
+      const response = await authAxios.post('/products', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+  
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to create product');
       }
-
+  
       alert('Product created successfully!');
       navigate('/product');
-    } catch (err) {
-      console.error('Error creating product:', err);
-      setError(err.message || 'Failed to create product');
+    } catch (error) {
+      console.error('Error creating product:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to create product');
     } finally {
       setLoading(false);
     }
   };
-
+  
+  const validateProductForm = () => {
+    if (!productImage) {
+      setError('Please upload a product image');
+      return false;
+    }
+  
+    if (!formData.name.trim()) {
+      setError('Product name is required');
+      return false;
+    }
+  
+    if (!formData.name.trim().match(/^[A-Za-z0-9\s\-']{2,}$/)) {
+      setError('Product name must be at least 2 characters and contain only letters, numbers, spaces, hyphens or apostrophes');
+      return false;
+    }
+  
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      return false;
+    }
+  
+    if (formData.description.trim().length < 5) {
+      setError('Description must be at least 5 characters');
+      return false;
+    }
+  
+    if (!formData.sellingprice || parseFloat(formData.sellingprice) <= 0) {
+      setError('Selling price must be greater than 0');
+      return false;
+    }
+  
+    if (!formData.costprice || parseFloat(formData.costprice) <= 0) {
+      setError('Cost price must be greater than 0');
+      return false;
+    }
+  
+    if (parseFloat(formData.costprice) > parseFloat(formData.sellingprice)) {
+      setError('Cost price cannot be greater than selling price');
+      return false;
+    }
+  
+    if (!formData.stock || parseInt(formData.stock) < 0) {
+      setError('Stock must be a non-negative number');
+      return false;
+    }
+  
+    if (!formData.category) {
+      setError('Category is required');
+      return false;
+    }
+  
+    if (!formData.status) {
+      setError('Status is required');
+      return false;
+    }
+  
+    setError('');
+    return true;
+  };
+  
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -80,6 +181,45 @@ const AddProduct = () => {
         )}
 
         <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-6">
+          {/* Image Upload Section */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Product Image *
+            </label>
+            <div className="flex items-center space-x-6">
+              <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center overflow-hidden relative">
+                {imagePreview ? (
+                  <img 
+                    src={imagePreview} 
+                    alt="Product preview" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center p-4 flex flex-col items-center">
+                    <Image className="h-10 w-10 text-gray-400 mb-2" />
+                    <span className="text-xs text-gray-500">No image</span>
+                  </div>
+                )}
+              </div>
+              
+              <div>
+                <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded inline-flex items-center">
+                  <Upload className="h-4 w-4 mr-2" />
+                  <span>Choose Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  Upload a product image (JPG, PNG, WEBP). Max 5MB.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -116,12 +256,28 @@ const AddProduct = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price *
+                Selling Price *
               </label>
               <input
                 type="number"
-                name="price"
-                value={formData.price}
+                name="sellingprice"
+                value={formData.sellingprice}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2"
+                min="0"
+                step="0.01"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Cost Price *
+              </label>
+              <input
+                type="number"
+                name="costprice"
+                value={formData.costprice}
                 onChange={handleInputChange}
                 className="w-full border rounded px-3 py-2"
                 min="0"
@@ -160,20 +316,6 @@ const AddProduct = () => {
                 <option value="discontinued">Discontinued</option>
               </select>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL
-              </label>
-              <input
-                type="text"
-                name="image"
-                value={formData.image}
-                onChange={handleInputChange}
-                className="w-full border rounded px-3 py-2"
-                placeholder="Enter image URL"
-              />
-            </div>
           </div>
 
           <div>
@@ -205,15 +347,15 @@ const AddProduct = () => {
               disabled={loading}
             >
               {loading ? (
-                <span className="flex items-center">
-                  <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></span>
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Saving...
-                </span>
+                </>
               ) : (
-                <span className="flex items-center">
+                <>
                   <Save className="h-4 w-4 mr-2" />
-                  Create Product
-                </span>
+                  Save Product
+                </>
               )}
             </button>
           </div>

@@ -148,16 +148,7 @@ const ViewTimetable = () => {
     printWindow.close();
   };
 
-  const handleEdit = (dayOfWeek) => {
-    const timetableId = timetable[dayOfWeek]?._id;
-    if (timetableId) {
-      navigate(`/edit-timetable/${timetableId}`);
-    } else {
-      // If no timetable exists for this day, redirect to create new
-      navigate(`/add-timetable/${classId}?day=${dayOfWeek}`);
-    }
-  };
-  
+
   const handleRefresh = () => {
     setRefreshing(true);
     fetchData();
