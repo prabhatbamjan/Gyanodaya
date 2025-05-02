@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Pencil, Trash, Mail, Phone, MapPin, Calendar, GraduationCap, User, Book } from 'lucide-react';
 
 import authAxios from '../../utils/auth';
-
+import { getUserRole } from '../../utils/auth';
 const StudentDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -13,7 +13,8 @@ const StudentDetails = () => {
   const [activeTab, setActiveTab] = useState('personal');
   const [attendanceData, setAttendanceData] = useState(null);
   const [feesData, setFeesData] = useState(null);
-
+ const role = getUserRole(); // 'admin', 'teacher', etc.
+  const classesLink = `/${role}-students`;
   useEffect(() => {
     const fetchStudent = async () => {
       setLoading(true);
@@ -75,17 +76,17 @@ const StudentDetails = () => {
 
   if (error) {
     return (
-      <Layout>
+   
         <div className="w-full p-6 bg-gray-50">
           <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
             {error}
           </div>
-          <Link to="/admin-students" className="text-blue-600 hover:text-blue-800 flex items-center">
+          <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center">
             <ArrowLeft className="h-5 w-5 mr-1" />
             Back to Students
           </Link>
         </div>
-      </Layout>
+    
     );
   }
 
@@ -96,7 +97,7 @@ const StudentDetails = () => {
           <div className="bg-yellow-100 text-yellow-700 p-4 rounded-lg mb-6">
             Student not found
           </div>
-          <Link to="/admin-students" className="text-blue-600 hover:text-blue-800 flex items-center">
+          <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center">
             <ArrowLeft className="h-5 w-5 mr-1" />
             Back to Students
           </Link>
@@ -111,7 +112,7 @@ const StudentDetails = () => {
         {/* Header with actions */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div className="flex items-center mb-4 md:mb-0">
-            <Link to="/admin-students" className="text-blue-600 hover:text-blue-800 flex items-center mr-4">
+            <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center mr-4">
               <ArrowLeft className="h-5 w-5 mr-1" />
               Back to Students
             </Link>
@@ -120,22 +121,7 @@ const StudentDetails = () => {
             </h1>
           </div>
           
-          <div className="flex space-x-2">
-            <Link 
-              to={`/admin-students/edit/${id}`}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center"
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
-            <button
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center"
-            >
-              <Trash className="h-4 w-4 mr-2" />
-              Delete
-            </button>
-          </div>
+         
         </div>
         
         {/* Student Profile Card */}

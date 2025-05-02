@@ -14,7 +14,7 @@ const ClassDetails = () => {
   const [activeTab, setActiveTab] = useState('students');
   const [students, setStudents] = useState([]);
   const [timetable, setTimetable] = useState(null);
-  const role = getUserRole(); // 'admin', 'teacher', etc.
+  const role = getUserRole();
 const classesLink = `/${role}-classes`; 
 
 
@@ -87,7 +87,7 @@ const classesLink = `/${role}-classes`;
           <div className="bg-red-100 text-red-700 p-4 rounded-lg mb-6">
             {error}
           </div>
-          <Link to="/admin-classes" className="text-blue-600 hover:text-blue-800 flex items-center">
+          <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center">
             <ArrowLeft className="h-5 w-5 mr-1" />
             Back to Classes
           </Link>
@@ -103,7 +103,7 @@ const classesLink = `/${role}-classes`;
           <div className="bg-yellow-100 text-yellow-700 p-4 rounded-lg mb-6">
             Class not found
           </div>
-          <Link to="/admin-classes" className="text-blue-600 hover:text-blue-800 flex items-center">
+          <Link to={classesLink} className="text-blue-600 hover:text-blue-800 flex items-center">
             <ArrowLeft className="h-5 w-5 mr-1" />
             Back to Classes
           </Link>

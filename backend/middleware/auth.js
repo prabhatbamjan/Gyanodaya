@@ -27,15 +27,17 @@ exports.protect = async (req, res, next) => {
                 status: 'error',
                 message: 'The user belonging to this token no longer exists.'
             });
+            return;
         }
 
         // Grant access to protected route
         req.user = currentUser;
         next();
     } catch (error) {
+        console.error('Auth error:', error);
         res.status(401).json({
             status: 'error',
-            message: 'Invalid token. Please log in again!'
+            message: error.message || 'Invalid token. Please log in again!'
         });
     }
 }; 

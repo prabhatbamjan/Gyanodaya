@@ -13,9 +13,11 @@ const notifications = require('./routes/notificationRoutes');
 const attendance = require('./routes/attendanceRoutes');
 const events = require('./routes/eventRoutes');
 const product =require('./routes/productRoutes')
-const chats = require('./routes/chatRoutes');
 
-// const orders = require('./routes/orderRoutes');
+const fees = require('./routes/feeRoutes');
+const salaries = require('./routes/salaryRoutes');
+
+const orders = require('./routes/orderRoutes');
 // const assignments = require('./routes/assignmentRoutes');
 // const submissions = require('./routes/submissionRoutes');
 // const academicCalendar = require('./routes/academicCalendarRoutes');
@@ -59,7 +61,10 @@ app.use('/api/notifications', notifications);
 app.use('/api/attendance', attendance);
 app.use('/api/events', events);
 app.use('/api/products',product)
-app.use('/api/chats', chats);
+
+app.use('/api/fees', fees);
+app.use('/api/salaries', salaries);
+app.use('/api/orders', orders);
 
 // app.use('/api/assignments', assignments);
 // app.use('/api/submissions', submissions);

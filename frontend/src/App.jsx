@@ -38,18 +38,28 @@ import EditAttendance from './pages/attendance/EditAttendance';
 import Event from './pages/events/EventsPage';
 import AddEvent from './pages/events/AddEvent';
 import EditEvent from './pages/events/EditEvent';
-// import Order from './pages/orders/OrdersPage';
-// import AddOrder from './pages/orders/AddOrder';
-// import EditOrder from './pages/orders/EditOrder';
 import Product from './pages/products/ProductsPage';
 import Addproduct from './pages/products/AddProduct';
 import Editproduct from './pages/products/EditProduct';
 import Viewproduct from './pages/products/ViewProduct';
+import OrderList from './pages/order/OrderList';
+import OrderDetails from './pages/order/OrderDetails';
+
 
 import Assignment from './pages/AssignmentManagement/AssignmentManagement';
 import AddAssignment from './pages/AssignmentManagement/AssignmentForm';
 import AssignmentGrading from './pages/AssignmentManagement/AssignmentGrading';
 import TeacherNotifications from './pages/teacher/TeacherNotifications';
+
+// Fee Management
+import FeeList from './pages/fee/FeeList';
+import AddFee from './pages/fee/AddFee';
+import EditFee from './pages/fee/EditFee';
+
+// Salary Management
+import SalaryList from './pages/salary/SalaryList';
+import AddSalary from './pages/salary/AddSalary';
+import EditSalary from './pages/salary/EditSalary';
 import TeacherResults from './pages/teacher/TeacherResults';
 import TeacherResultForm from './pages/teacher/TeacherResultForm';
 import AdminResults from './pages/admin/AdminResults';
@@ -72,6 +82,12 @@ import MyStudent from './pages/teacher/Mystudent';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherTimetable from './pages/teacher/TeacherTimetable';
 import Messages from './pages/Messages';
+
+import MarkTeacherAttendance from './pages/attendance/teacher/MarkTeacherAttendance';
+import ViewTeacherAttendance from './pages/attendance/teacher/ViewTeacherAttendance';
+import AdminAttendance from './pages/admin/AdminAttendance';
+
+
 
 export default function LandingPage() { 
   return (
@@ -137,6 +153,38 @@ export default function LandingPage() {
               <ViewClass/>
             </ProtectedRoute>
           } />
+          <Route path="/admin-fees" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <FeeList/>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-fees/add" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AddFee/>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-fees/edit/:id" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <EditFee/>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin-salary" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <SalaryList/>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-salary/add" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AddSalary/>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin-salary/edit/:id" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <EditSalary/>
+            </ProtectedRoute>
+          } />
+
           <Route path="/admin-teachers" element={
             <ProtectedRoute requiredRoles={['admin']}>
               <Teacher/>
@@ -152,8 +200,8 @@ export default function LandingPage() {
               <EditTeacher/>
             </ProtectedRoute>
           } />    
-          <Route path="/admin-teachers/view/:id" element={
-            <ProtectedRoute requiredRoles={['admin']}>
+          <Route path="/teachers/view/:id" element={
+            <ProtectedRoute requiredRoles={['admin','teacher','student','parent']}>
               <TeacherDetails/>
             </ProtectedRoute>
           } />
@@ -172,8 +220,8 @@ export default function LandingPage() {
               <EditStudent/>
             </ProtectedRoute>
           } />
-           <Route path="/admin-students/:id" element={
-            <ProtectedRoute >
+           <Route path="/students/:id" element={
+            <ProtectedRoute requiredRoles={['admin','teacher','student','parent']}>
               <ViewStudent/>
             </ProtectedRoute>
           } />
@@ -198,7 +246,8 @@ export default function LandingPage() {
             </ProtectedRoute>
             
           } />
-           <Route path="/admin-timetable/edit/:id" element={
+           
+          <Route path="/admin-timetable/edit/:id" element={
             <ProtectedRoute requiredRoles={['admin']}>
               <EditTimetable/>
             </ProtectedRoute>
@@ -285,6 +334,35 @@ export default function LandingPage() {
               <Messages />
             </ProtectedRoute>
           } />
+          <Route path="/fee" element={<FeeList />} />
+<Route path="/fee/add" element={<AddFee />} />
+<Route path="/fee/edit/:id" element={<EditFee />} />
+<Route path="/admin-attendance" element={
+  <ProtectedRoute requiredRoles={['admin']}>
+    <AdminAttendance />
+  </ProtectedRoute>
+} />
+<Route path="/admin-attendance/teacher" element={
+  <ProtectedRoute requiredRoles={['admin']}>
+    <MarkTeacherAttendance />
+  </ProtectedRoute>
+} />
+<Route path="/orders" element={
+  <ProtectedRoute requiredRoles={['admin']}>
+    <OrderList />
+  </ProtectedRoute>
+} />
+<Route path="/orders/:id" element={
+  <ProtectedRoute requiredRoles={['admin']}>
+    <OrderDetails />
+  </ProtectedRoute>
+} />
+
+<Route path="/admin-attendance/teacher/view" element={
+  <ProtectedRoute requiredRoles={['admin']}>
+    <ViewTeacherAttendance />
+  </ProtectedRoute>
+} />
         </Routes>
       </Router>
    

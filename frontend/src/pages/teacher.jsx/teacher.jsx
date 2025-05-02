@@ -203,7 +203,7 @@ const getClassNames = (classIds) => {
                           <Link to={`/admin-teachers/edit/${teacher._id}`} className="text-blue-600 hover:text-blue-800">
                             <Pencil size={16} />
                           </Link>
-                          <Link to={`/admin-teachers/view/${teacher._id}`} className="text-green-600 hover:text-green-800">
+                          <Link to={`/teachers/view/${teacher._id}`} className="text-green-600 hover:text-green-800">
                             <Eye size={16} />
                           </Link>
                           <button

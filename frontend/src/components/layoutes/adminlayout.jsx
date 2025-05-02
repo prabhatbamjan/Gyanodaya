@@ -15,7 +15,9 @@ import {
   User,
   Settings,
   Bell,
-  MessageSquare
+  MessageSquare,
+  DollarSign,
+  Wallet
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout, getUserData } from '../../utils/auth';
@@ -324,74 +326,90 @@ function Layout({ children }) {
       <div className="flex flex-1">
         {/* Sidebar - Desktop */}
         <aside className="w-64 bg-white shadow-md hidden md:block">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold text-gray-800">Main Menu</h2>
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center">
+              <Package className="h-5 w-5 mr-2 text-blue-600" />
+              Administration
+            </h2>
           </div>
           <nav className="py-4">
-            <ul>
+            <div className="px-3 mb-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Main</h3>
+            </div>
+            <ul className="space-y-1">
               <li>
                 <Link 
                   to="/admin-dashboard" 
-                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                     isActive('/admin-dashboard') 
-                      ? 'bg-blue-50 border-r-4 border-blue-500' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <Building2 className={`h-5 w-5 mr-3 ${isActive('/dashboard') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Building2 className={`h-5 w-5 mr-2 ${isActive('/admin-dashboard') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Dashboard</span>
                 </Link>
               </li>
-              <li>
-                <Link 
-                  to="/admin-subjects" 
-                  className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin-subjects') 
-                      ? 'bg-blue-50 border-r-4 border-blue-500' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                >
-                  <School2 className={`h-5 w-5 mr-3 ${isActive('/admin/teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
-                  <span>Subjects</span>
-                </Link>
-              </li>
+
+              <div className="px-3 pt-5 pb-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Academic</h3>
+              </div>
+
               <li>
                 <Link 
                   to="/admin-classes" 
-                  className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/classes') 
-                      ? 'bg-blue-50 border-r-4 border-blue-500' 
-                      : 'hover:bg-gray-100'
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    isActive('/admin-classes') 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <BookOpen className={`h-5 w-5 mr-3 ${isActive('/admin/classes') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <BookOpen className={`h-5 w-5 mr-2 ${isActive('/admin-classes') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Classes</span>
                 </Link>
               </li>
               <li>
                 <Link 
-                  to="/admin-teachers" 
-                  className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/admin/teachers') 
-                      ? 'bg-blue-50 border-r-4 border-blue-500' 
-                      : 'hover:bg-gray-100'
+                  to="/admin-subjects" 
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    isActive('/admin-subjects') 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <School2 className={`h-5 w-5 mr-3 ${isActive('/admin/teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
-                  <span>Teachers</span>
+                  <Package className={`h-5 w-5 mr-2 ${isActive('/admin-subjects') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Subjects</span>
                 </Link>
               </li>
               <li>
                 <Link 
                   to="/admin-timetable" 
-                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                     isActive('/admin-timetable') 
-                      ? 'bg-blue-50 border-r-4 border-blue-500' 
-                      : 'hover:bg-gray-100'
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <Calendar className={`h-5 w-5 mr-3 ${isActive('/admin-timetable') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <Calendar className={`h-5 w-5 mr-2 ${isActive('/admin-timetable') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Time Table</span>
+                </Link>
+              </li>
+
+              <div className="px-3 pt-5 pb-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Users</h3>
+              </div>
+
+              <li>
+                <Link 
+                  to="/admin-teachers" 
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    isActive('/admin-teachers') 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <School2 className={`h-5 w-5 mr-2 ${isActive('/admin-teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Teachers</span>
                 </Link>
               </li>
               <li>
@@ -486,6 +504,32 @@ function Layout({ children }) {
                 </Link>
               </li>
               <li>
+                <Link 
+                  to="/fee" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/fee') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <DollarSign className={`h-5 w-5 mr-3 ${isActive('/fee') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Fee Management</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/admin-salary-management" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/admin-salary-management') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Wallet className={`h-5 w-5 mr-3 ${isActive('/admin-salary-management') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Salary Management</span>
+                </Link>
+              </li>
+              <li>
                 <button 
                   onClick={handleLogout}
                   className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
@@ -512,21 +556,21 @@ function Layout({ children }) {
                 <ul>
                   <li>
                     <Link 
-                      to="/dashboard" 
+                      to="/admin-dashboard" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/dashboard') 
+                        isActive('/admin-dashboard') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <Building2 className={`h-5 w-5 mr-3 ${isActive('/dashboard') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <Building2 className={`h-5 w-5 mr-3 ${isActive('/admin-dashboard') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Dashboard</span>
                     </Link>
                   </li>
                   <li>
                     <Link 
-                      to="/admin-profile/${userData._id}" 
+                      to="/admin-profile" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
                         isActive('/admin-profile') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
@@ -540,100 +584,58 @@ function Layout({ children }) {
                   </li>
                   <li>
                     <Link 
-                      to="/admin/students" 
+                      to="/admin-students" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/students') 
+                        isActive('/admin-students') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <Users className={`h-5 w-5 mr-3 ${isActive('/admin/students') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <Users className={`h-5 w-5 mr-3 ${isActive('/admin-students') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Students</span>
                     </Link>
                   </li>
                   <li>
                     <Link 
-                      to="/admin/teachers" 
+                      to="/admin-teachers" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/teachers') 
+                        isActive('/admin-teachers') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <School2 className={`h-5 w-5 mr-3 ${isActive('/admin/teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <Users className={`h-5 w-5 mr-3 ${isActive('/admin-teachers') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Teachers</span>
                     </Link>
                   </li>
                   <li>
                     <Link 
-                      to="/admin/classes" 
+                      to="/admin-classes" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/classes') 
+                        isActive('/admin-classes') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <BookOpen className={`h-5 w-5 mr-3 ${isActive('/admin/classes') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <BookOpen className={`h-5 w-5 mr-3 ${isActive('/admin-classes') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Classes</span>
                     </Link>
                   </li>
                   <li>
                     <Link 
-                      to="/attendance" 
+                      to="/admin-events" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/attendance') 
+                        isActive('/admin-events') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/attendance') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Attendance</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      to="/messages" 
-                      className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/messages') 
-                          ? 'bg-blue-50 border-r-4 border-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={toggleMobileMenu}
-                    >
-                      <MessageSquare className={`h-5 w-5 mr-3 ${isActive('/messages') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Messages</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      to="/admin/events" 
-                      className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/events') 
-                          ? 'bg-blue-50 border-r-4 border-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={toggleMobileMenu}
-                    >
-                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/admin/events') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <Calendar className={`h-5 w-5 mr-3 ${isActive('/admin-events') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Events</span>
-                    </Link>
-                  </li>
-                  <li>
-                    <Link 
-                      to="/admin/orders" 
-                      className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/admin/orders') 
-                          ? 'bg-blue-50 border-r-4 border-blue-500' 
-                          : 'hover:bg-gray-100'
-                      }`}
-                      onClick={toggleMobileMenu}
-                    >
-                      <Package className={`h-5 w-5 mr-3 ${isActive('/admin/orders') ? 'text-blue-600' : 'text-gray-500'}`} />
-                      <span>Orders</span>
                     </Link>
                   </li>
                   <li>
@@ -648,6 +650,34 @@ function Layout({ children }) {
                     >
                       <ShoppingBag className={`h-5 w-5 mr-3 ${isActive('/admin/shop') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>School Shop</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="fee" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/fee') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <DollarSign className={`h-5 w-5 mr-3 ${isActive('/fee') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Fee Management</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/salary" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/admin-salary') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Wallet className={`h-5 w-5 mr-3 ${isActive('/admin-salary') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>Salary Management</span>
                     </Link>
                   </li>
                   <li>
@@ -681,8 +711,9 @@ function Layout({ children }) {
                   <li>
                     <button 
                       onClick={() => {
-                        toggleMobileMenu();
                         handleLogout();
+                        toggleMobileMenu();
+
                       }}
                       className="w-full flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
                     >
@@ -695,9 +726,9 @@ function Layout({ children }) {
             </div>
           </div>
         )}
-        
+
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 p-6">
           {children}
         </main>
       </div>
