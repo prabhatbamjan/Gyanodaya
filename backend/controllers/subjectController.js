@@ -2,6 +2,7 @@ const Subject = require('../models/subjectModel');
 const Class = require('../models/classModel');
 const Timetable = require('../models/timetableModel');
 const Teacher= require('../models/teacherModel');
+const Student = require('../models/studentModel');
 
 exports.getSubjects = async (req, res) => {
     try {
@@ -188,4 +189,36 @@ exports.getSubjectss = async (req, res) => {
             
         });
     }
+};
+
+/**
+ * Get subjects for the current student
+ * @route GET /api/student/subjects
+ * @access Private (Student only)
+ */
+exports.getStudentSubjects = async (req, res) => {
+  try {
+    // Get student info with populated class
+    const student = await Student.findById(req.user.studentId).populate('classId');
+    
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    // Find subjects for the student's class
+    const subjects = await Subject.find({ 
+      classId: student.classId._id 
+    }).sort({ name: 1 });
+    
+    return res.status(200).json({
+      success: true,
+      data: subjects
+    });
+  } catch (error) {
+    console.error('Error fetching student subjects:', error);
+    return res.status(500).json({
+      message: 'Server error while fetching subjects',
+      error: error.message
+    });
+  }
 };

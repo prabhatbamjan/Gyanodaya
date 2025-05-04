@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
 
 // Generate JWT Token
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+const generateToken = (id,role) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
     });
 };
@@ -42,7 +42,7 @@ exports.register = async (req, res) => {
         });
 
         // Generate token
-        const token = generateToken(user._id);
+        const token = generateToken(user._id,user.role);
 
         res.status(201).json({
             status: 'success',

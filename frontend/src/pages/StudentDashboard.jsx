@@ -1,28 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 import {
-  BookOpen,
-  Calendar,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  User,
   Bell,
-  ClipboardCheck,
   Clock,
-  Award,
-  BookmarkIcon,
   FileText,
   Menu,
-  CheckSquare,
-  Bookmark,
-  Notebook,
-  PieChart,
 } from "lucide-react";
-import { logout, getUserData } from '../utils/auth';
-
-
+import Layout from "../components/layoutes/studentlayout";
+import { logout } from "../utils/auth";
 
 const StudentDashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
@@ -32,6 +17,7 @@ const StudentDashboard = () => {
     { id: 2, text: "Science project feedback available", time: "2 hours ago" },
     { id: 3, text: "School trip forms due Friday", time: "Yesterday" },
   ]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -43,15 +29,10 @@ const StudentDashboard = () => {
 
     checkIfMobile();
     window.addEventListener("resize", checkIfMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const courses = [
     { id: 1, name: "Mathematics", progress: 75, teacher: "Ms. Johnson", nextClass: "Tomorrow, 9:00 AM" },
@@ -70,265 +51,184 @@ const StudentDashboard = () => {
     { id: 1, title: "School Holiday Next Week", date: "Posted 3 days ago" },
     { id: 2, title: "Annual Sports Day Coming Up", date: "Posted 1 week ago" },
   ];
+
   const handleLogout = () => {
-      logout();
-      navigate('/login');
-    };
+    logout();
+    navigate("/login");
+  };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside
-        className={`${sidebarOpen ? "w-64" : "w-0 -ml-64"} md:ml-0 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out fixed md:relative z-30 h-screen overflow-y-auto`}
-      >
-        <div className="flex items-center gap-2 p-4 border-b border-gray-200">
-          <GraduationCap className="h-6 w-6 text-blue-600" />
-          <div className="font-semibold text-lg text-blue-600">Student Portal</div>
-        </div>
-
-        <div className="py-4">
-          <div className="px-4 mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Academics</h3>
-            <ul className="space-y-1">
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md bg-blue-50 text-blue-700">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <BookOpen className="h-4 w-4" />
-                  <span>My Courses</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <CheckSquare className="h-4 w-4" />
-                  <span>Assignments</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <PieChart className="h-4 w-4" />
-                  <span>Grades</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div className="px-4 mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Resources</h3>
-            <ul className="space-y-1">
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <Calendar className="h-4 w-4" />
-                  <span>Calendar</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <Notebook className="h-4 w-4" />
-                  <span>Study Materials</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Messages</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div className="px-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Account</h3>
-            <ul className="space-y-1">
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 p-4 mt-auto">
-          <div className="flex items-center gap-2 px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-medium">
-              JS
+    <Layout>
+      <div className="flex min-h-screen bg-gray-50">
+        <div className="flex-1">
+          {/* Header */}
+          <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sticky top-0 z-20">
+            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden">
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="ml-4 flex-1 flex justify-between items-center">
+              <h1 className="text-xl font-semibold text-blue-700">Student Dashboard</h1>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
+                    <Bell className="h-5 w-5" />
+                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                      {notifications.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col items-start">
-              <span className="font-medium">John Smith</span>
-              <span className="text-xs text-gray-500">Grade 10-A</span>
-            </div>
-            
-            
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center mt-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-          >
-            <LogOut className="h-4 w-4 mr-3 text-gray-500" />
-            <span>Log out</span>
-          </button>
-         
-        </div>
-      </aside>
+          </header>
 
-      <div className="flex-1">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sticky top-0 z-20">
-          <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="ml-4 flex-1 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-blue-700">Student Dashboard</h1>
-
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                    {notifications.length}
-                  </span>
+          {/* Main Content */}
+          <main className="p-4 md:p-6">
+            {/* Welcome Banner */}
+            <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-lg p-4 md:p-6 text-white">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome Back, John!</h2>
+              <p className="opacity-90 mb-4">
+                You have {upcomingAssignments.length} upcoming assignments and {courses.length} active courses.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  onClick={() => navigate('/student/assignments')}
+                  className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  View Assignments
+                </button>
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium border border-blue-400 hover:bg-blue-700 transition-colors">
+                  Check Schedule
                 </button>
               </div>
             </div>
-          </div>
-        </header>
 
-        <main className="p-4 md:p-6">
-          {/* Welcome Banner */}
-          <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-lg p-4 md:p-6 text-white">
-            <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome Back, John!</h2>
-            <p className="opacity-90 mb-4">You have {upcomingAssignments.length} upcoming assignments and {courses.length} active courses.</p>
-            <div className="flex flex-wrap gap-3">
-              <button className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors">
-                View Assignments
-              </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium border border-blue-400 hover:bg-blue-700 transition-colors">
-                Check Schedule
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* My Courses */}
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">My Courses</h3>
-                  <button className="text-sm text-blue-600 hover:text-blue-800">View All</button>
-                </div>
-                <div className="space-y-4">
-                  {courses.map((course) => (
-                    <div key={course.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-800">{course.name}</h4>
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{course.teacher}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* My Courses */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium text-gray-800">My Courses</h3>
+                    <button className="text-sm text-blue-600 hover:text-blue-800">View All</button>
+                  </div>
+                  <div className="space-y-4">
+                    {courses.map((course) => (
+                      <div key={course.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-800">{course.name}</h4>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{course.teacher}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${course.progress}%` }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{course.progress}% Complete</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {course.nextClass}
+                          </span>
+                        </div>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${course.progress}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-gray-500">
-                        <span>{course.progress}% Complete</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {course.nextClass}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Upcoming Assignments */}
-            <div>
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">Upcoming Assignments</h3>
-                  <button className="text-sm text-blue-600 hover:text-blue-800">View All</button>
-                </div>
-                <div className="space-y-3">
-                  {upcomingAssignments.map((assignment) => (
-                    <div key={assignment.id} className="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                      <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mr-3">
-                        <FileText className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-800">{assignment.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{assignment.course} • Due {assignment.due}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Announcements */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">Announcements</h3>
-                  <button className="text-sm text-blue-600 hover:text-blue-800">View All</button>
+              {/* Upcoming Assignments */}
+              <div>
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium text-gray-800">Upcoming Assignments</h3>
+                    <button 
+                      onClick={() => navigate('/student/assignments')}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      View All
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    {upcomingAssignments.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mr-3">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-800">{assignment.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {assignment.course} • Due {assignment.due}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-3">
-                  {announcements.map((announcement) => (
-                    <div key={announcement.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                      <p className="text-sm font-medium text-gray-800">{announcement.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">{announcement.date}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Weekly Schedule */}
-          <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-medium text-gray-800">Today's Schedule</h3>
-              <button className="text-sm text-blue-600 hover:text-blue-800">Full Calendar</button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="border border-gray-100 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-500">9:00 - 10:30 AM</span>
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Current</span>
+                {/* Announcements */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium text-gray-800">Announcements</h3>
+                    <button className="text-sm text-blue-600 hover:text-blue-800">View All</button>
+                  </div>
+                  <div className="space-y-3">
+                    {announcements.map((announcement) => (
+                      <div key={announcement.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                        <p className="text-sm font-medium text-gray-800">{announcement.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{announcement.date}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <h4 className="font-medium text-gray-800">Mathematics</h4>
-                <p className="text-xs text-gray-500 mt-1">Room 102 • Ms. Johnson</p>
-              </div>
-              <div className="border border-gray-100 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-500">10:45 - 12:15 PM</span>
-                </div>
-                <h4 className="font-medium text-gray-800">History</h4>
-                <p className="text-xs text-gray-500 mt-1">Room 205 • Mr. Wilson</p>
-              </div>
-              <div className="border border-gray-100 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-500">1:00 - 2:30 PM</span>
-                </div>
-                <h4 className="font-medium text-gray-800">English</h4>
-                <p className="text-xs text-gray-500 mt-1">Room 301 • Mrs. Davis</p>
-              </div>
-              <div className="border border-gray-100 rounded-lg p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-gray-500">2:45 - 4:15 PM</span>
-                </div>
-                <h4 className="font-medium text-gray-800">Science</h4>
-                <p className="text-xs text-gray-500 mt-1">Lab 3 • Mr. Smith</p>
               </div>
             </div>
-          </div>
-        </main>
+
+            {/* Today's Schedule */}
+            <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-medium text-gray-800">Today's Schedule</h3>
+                <button className="text-sm text-blue-600 hover:text-blue-800">Full Calendar</button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500">9:00 - 10:30 AM</span>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Current</span>
+                  </div>
+                  <h4 className="font-medium text-gray-800">Mathematics</h4>
+                  <p className="text-xs text-gray-500 mt-1">Room 102 • Ms. Johnson</p>
+                </div>
+                <div className="border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500">10:45 - 12:15 PM</span>
+                  </div>
+                  <h4 className="font-medium text-gray-800">History</h4>
+                  <p className="text-xs text-gray-500 mt-1">Room 205 • Mr. Wilson</p>
+                </div>
+                <div className="border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500">1:00 - 2:30 PM</span>
+                  </div>
+                  <h4 className="font-medium text-gray-800">English</h4>
+                  <p className="text-xs text-gray-500 mt-1">Room 301 • Mrs. Davis</p>
+                </div>
+                <div className="border border-gray-100 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500">2:45 - 4:15 PM</span>
+                  </div>
+                  <h4 className="font-medium text-gray-800">Science</h4>
+                  <p className="text-xs text-gray-500 mt-1">Lab 3 • Mr. Smith</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 
-export default StudentDashboard; 
+export default StudentDashboard;

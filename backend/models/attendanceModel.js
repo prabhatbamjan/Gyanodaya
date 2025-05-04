@@ -56,7 +56,7 @@ const attendanceSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['draft', 'submitted', 'verified'],
-        default: 'draft'
+        default: 'submitted'
     },
     createdAt: {
         type: Date,

@@ -49,8 +49,11 @@ import OrderDetails from './pages/order/OrderDetails';
 import Assignment from './pages/AssignmentManagement/AssignmentManagement';
 import AddAssignment from './pages/AssignmentManagement/AssignmentForm';
 import AssignmentGrading from './pages/AssignmentManagement/AssignmentGrading';
+import AssignmentEdit from './pages/AssignmentManagement/AssignmentEdite';
 import TeacherNotifications from './pages/teacher/TeacherNotifications';
-
+import Exam from './pages/admin/Exam/exam';
+import AddExam from './pages/admin/Exam/AddExam';
+import EditExam from './pages/admin/Exam/EditExam';
 // Fee Management
 import FeeList from './pages/fee/FeeList';
 import AddFee from './pages/fee/AddFee';
@@ -63,6 +66,9 @@ import EditSalary from './pages/salary/EditSalary';
 import TeacherResults from './pages/teacher/TeacherResults';
 import TeacherResultForm from './pages/teacher/TeacherResultForm';
 import AdminResults from './pages/admin/AdminResults';
+import StudentAssignments from './pages/student/StudentAssignments';
+import StudentSubmissionForm from './pages/student/StudentSubmissionForm';
+import ViewSubmission from './pages/student/ViewSubmission';
 // import Submissions from './pages/Submissions';
 // import SubmissionDetail from './pages/SubmissionDetail';
 // import StudentSubmission from './pages/StudentSubmission';
@@ -74,11 +80,14 @@ import AdminResults from './pages/admin/AdminResults';
 // import TeacherProfile from './pages/teacher/TeacherProfile';
 // import ParentChildren from './pages/parent/ParentChildren';
 // import ParentProfile from './pages/parent/ParentProfile';
-// import StudentSubjects from './pages/student/StudentSubjects';
-// import StudentTimetable from './pages/student/StudentTimetable';
+ import StudentSubjects from './pages/student/MyCourse';
+import StudentTimetable from './pages/student/MyTimetable';
+import StudentAttendance from './pages/student/MyAttendance';
+import MyTeacher from './pages/student/MyTeacher';
 // import StudentProfile from './pages/student/StudentProfile';
 import MyClasses from './pages/teacher/MyClasses';
 import MyStudent from './pages/teacher/Mystudent';
+import StudentNotice from './pages/student/notice';
 import TeacherAttendance from './pages/teacher/TeacherAttendance';
 import TeacherTimetable from './pages/teacher/TeacherTimetable';
 import Messages from './pages/Messages';
@@ -286,6 +295,11 @@ export default function LandingPage() {
          <Route path="/teacher-attendance/mark" element={<ProtectedRoute requiredRoles={['teacher']}><AddAttendance /></ProtectedRoute>} />
          <Route path="/teacher-attendance/edit/:id" element={<ProtectedRoute requiredRoles={['teacher']}><EditAttendance /></ProtectedRoute>} />
          <Route path="/teacher-attendance/view/:id" element={<ProtectedRoute requiredRoles={['teacher']}><ViewAttendance /></ProtectedRoute>} />
+          
+         {/* exam */}
+          <Route path="/admin-exams" element={<ProtectedRoute requiredRoles={['admin']}><Exam /></ProtectedRoute>} />
+          <Route path="/admin/exams/add" element={<ProtectedRoute requiredRoles={['admin']}><AddExam /></ProtectedRoute>} />
+          <Route path="/admin/exams/edit/:id" element={<ProtectedRoute requiredRoles={['admin']}><EditExam /></ProtectedRoute>} />
         
          {/* admin results */}
          <Route path="/admin-results" element={<ProtectedRoute requiredRoles={['admin']}><AdminResults /></ProtectedRoute>} />
@@ -293,8 +307,8 @@ export default function LandingPage() {
          {/* assignment */}
          <Route path="/assignments" element={<Assignment/>} />
          <Route path="/assignments/create" element={<AddAssignment/>} />
-         <Route path="/assignments/edit/:id" element={<ProtectedRoute element={<AddAssignment/>} allowedRoles={['teacher']} />} />
-         <Route path="/assignments/grading/:id" element={<ProtectedRoute element={<AssignmentGrading/>} allowedRoles={['teacher']} />} />
+         <Route path="/assignments/edit/:id" element={<AssignmentEdit/>} />
+         <Route path="/assignments/grading/:id" element={<AssignmentGrading/>} />
 {/*          
          submissions */}
          {/* <Route path="/submissions" element={
@@ -324,10 +338,21 @@ export default function LandingPage() {
           <Route path="/student/profile" element={<StudentProfile //>} /> */}
 
           {/* student assignments */}
-          {/* <Route path="/student/assignments" element={
-            <ProtectedRoute element={<StudentAssignments/>} allowedRoles={['student']} />
-          } /> */}
-
+          <Route path="/student/dashboard" element={<StudentDashboard />} />
+          {/* <Route path="/student/profile" element={<StudentProfile/>} /> */}
+          <Route path="/student/timetable" element={<StudentTimetable/>} />
+          <Route path="/student/attendance" element={<StudentAttendance/>} />
+          {/* <Route path="/student/exam" element={<StudentExam/>} /> */}
+          {/* <Route path="/student/result" element={<StudentResult/>} />
+          <Route path="/student/fees" element={<StudentFees/>} /> */}
+          {/* <Route path="/student/notification" element={<StudentNotification/>} /> */}
+          {/* <Route path="/student/leave" element={<StudentLeave/>} /> */}
+          <Route path="/student/assignments" element={<StudentAssignments />} />
+          <Route path="/student/assignments/submit/:id" element={<StudentSubmissionForm />} />
+          <Route path="/student/assignments/view-submission/:id" element={<ViewSubmission />} />
+          <Route path="/student/mycourse" element={<StudentSubjects />} />
+          <Route path="/student/myteacher" element={<MyTeacher />} />
+          <Route path="/student/notice" element={<StudentNotice />} />
           {/* chat/messaging */}
           <Route path="/messages" element={
             <ProtectedRoute requiredRoles={['admin', 'teacher', 'student', 'parent']}>

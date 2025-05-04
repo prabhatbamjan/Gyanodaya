@@ -100,7 +100,13 @@ function AddClass() {
       setIsLoading(false);
       return;
     }
-
+    const currentYear= new Date().getFullYear();
+    console.log(currentYear)
+    if(parseInt(academicYear) !== currentYear){
+      setError('Academic year must be equal to current year');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const dataToSend = {
@@ -227,17 +233,20 @@ function AddClass() {
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Academic Year <span className="text-red-500">*</span>
   </label>
-  <input
-    type="number"
-    name="academicYear"
-    value={formData.academicYear}
-    onChange={handleInputChange}
-    placeholder="e.g. 2080"
-    min="2000"
-    max="2200"
-    className="w-full border rounded px-3 py-2"
-    required
-  />
+  <select
+  name="academicYear"
+  value={formData.academicYear}
+  onChange={handleInputChange}
+  className="w-full border rounded px-3 py-2"
+  required
+>
+  <option value="">Select Year</option>
+  {Array.from({ length: 10 }, (_, i) => 2024 + i).map((year) => (
+    <option key={year} value={year}>
+      {year}
+    </option>
+  ))}
+</select>
 </div>
 
             <div>

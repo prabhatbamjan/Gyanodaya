@@ -16,11 +16,11 @@ function EditClass() {
     fee: '',
     academicYear: '',
     subjects: [],
-    classTeacher: '', // New field
+    classTeacher: '',
   });
 
   const [subjects, setSubjects] = useState([]);
-  const [teachers, setTeachers] = useState([]); // New state for teachers
+  const [teachers, setTeachers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -33,7 +33,7 @@ function EditClass() {
         setFormData({
           ...classData,
           subjects: classData.subjects || [],
-          classTeacher: classData.classTeacher || '', // prefill
+          classTeacher: classData.classTeacher?._id || '',
         });
       } catch (err) {
         console.error(err);
@@ -54,12 +54,12 @@ function EditClass() {
     const fetchTeachers = async () => {
       try {
         const res1 = await authAxios.get(`timetables/class/${id}`);
-        const timetable = res1.data.data; // timetable is an array
+        const timetable = res1.data.data;
         const res = await authAxios.get('teachers/');
         const allTeachers = res.data.data;
-    
+
         const teacherIdsInTimetable = new Set();
-    
+
         timetable.forEach((dayData) => {
           if (Array.isArray(dayData.periods)) {
             dayData.periods.forEach((period) => {
@@ -69,26 +69,35 @@ function EditClass() {
             });
           }
         });
-    
-        // 🔍 Filter only teachers used in timetable
-        const filteredTeachers = allTeachers.filter((teacher) =>
+
+        let filteredTeachers = allTeachers.filter((teacher) =>
           teacherIdsInTimetable.has(teacher._id)
         );
-    
-        setTeachers(filteredTeachers); // Show only relevant teachers
-        console.log('Filtered teachers in timetable:', filteredTeachers);
+
+        const assignedTeacherId = formData.classTeacher;
+        if (assignedTeacherId) {
+          const assignedTeacher = allTeachers.find(
+            (teacher) => teacher._id === assignedTeacherId
+          );
+          if (
+            assignedTeacher &&
+            !filteredTeachers.some((t) => t._id === assignedTeacherId)
+          ) {
+            filteredTeachers = [assignedTeacher, ...filteredTeachers];
+          }
+        }
+
+        setTeachers(filteredTeachers);
       } catch (error) {
         console.error('Error fetching teachers:', error);
         setError('Failed to fetch teachers.');
       }
     };
-    
-    
 
     fetchClassData();
     fetchSubjects();
     fetchTeachers();
-  }, [id]);
+  }, [id, formData.classTeacher]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -185,7 +194,6 @@ function EditClass() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Name & Grade */}
             {["name", "grade"].map((field) => (
               <div key={field}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -200,7 +208,7 @@ function EditClass() {
                 >
                   <option value="">Select {field}</option>
                   {[...Array(12)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
+                    <option key={i + 1} value={String(i + 1)}>
                       {i + 1}
                     </option>
                   ))}
@@ -208,7 +216,6 @@ function EditClass() {
               </div>
             ))}
 
-            {/* Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Section <span className="text-red-500">*</span>
@@ -229,7 +236,6 @@ function EditClass() {
               </select>
             </div>
 
-            {/* Room Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Room Number <span className="text-red-500">*</span>
@@ -243,14 +249,13 @@ function EditClass() {
               >
                 <option value="">Select Room</option>
                 {[...Array(12)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>
+                  <option key={i + 1} value={String(i + 1)}>
                     {i + 1}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Academic Year */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Academic Year <span className="text-red-500">*</span>
@@ -267,7 +272,6 @@ function EditClass() {
               />
             </div>
 
-            {/* Fee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fee <span className="text-red-500">*</span>
@@ -283,7 +287,6 @@ function EditClass() {
               />
             </div>
 
-            {/* Class Teacher */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Class Teacher <span className="text-red-500">*</span>
@@ -298,14 +301,13 @@ function EditClass() {
                 <option value="">Select Teacher</option>
                 {teachers.map((teacher) => (
                   <option key={teacher._id} value={teacher._id}>
-                    {teacher.firstName}  {teacher.lastName}
+                    {teacher.firstName} {teacher.lastName}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Subject Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Subjects</label>
             <div className="flex flex-wrap gap-2 mb-4">
@@ -329,7 +331,6 @@ function EditClass() {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-end">
             <button
               type="submit"

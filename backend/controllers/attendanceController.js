@@ -1,4 +1,5 @@
 const Attendance = require('../models/attendanceModel');
+const TAttendance = require('../models/TattemdanceModel');
 const Class = require('../models/classModel');
 const Student = require('../models/studentModel');
 const Teacher = require('../models/teacherModel');
@@ -418,3 +419,162 @@ function getWeekNumber(date) {
     const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
     return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
 } 
+ exports.getStudentAttendance = async (req, res) => {
+        const { studentId } = req.params;
+
+        try {
+            const records = await Attendance.find({ 'records.student': studentId })            
+                .sort({ date: -1 });    
+                
+
+                res.status(200).json({
+                    success: true,
+                    count: records.length,
+                    data: records
+                });
+        } catch (error) {
+            console.error('Error fetching student attendance:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch student attendance',
+                error: error.message
+            });
+        }
+    }
+
+
+exports.createTAttendance = async (req, res) => {
+    try {
+        const {
+           
+            date,
+          
+            records,
+            user: userId,
+            
+        } = req.body;
+
+        // Validate class exists
+        const userExists = await User.findById(userId);
+        if (!userExists) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
+
+       
+       
+
+        // Validate all students exist
+        for (const record of records) {
+            const teacherExists = await Teacher.findById(record.teacher);
+            if (!teacherExists) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Teacher with ID ${record.teacher} not found`
+                });
+            }
+        }
+
+        // Check if attendance already exists for this class, subject, and date
+        const existingAttendance = await TAttendance.findOne({
+            
+            date: new Date(date),
+            
+        });
+
+        if (existingAttendance) {
+            return res.status(409).json({
+                success: false,
+                message: 'Attendance record already exists for this class, subject, and period'
+            });
+        }
+
+        const attendance = await TAttendance.create({
+            
+            date: new Date(date),
+            records,
+            user: userId,
+            
+        });
+
+        // Create notifications for absent students
+        const absentTeachers= records.filter(record => record.status === 'absent');
+        for (const record of absentTeachers) {
+            await Notification.create({
+                recipient: record.teacher,
+                type: 'attendance',
+                title: 'Absence Recorded',
+                message: `You were marked absent on ${new Date(date).toLocaleDateString()}`,
+                relatedTo: attendance._id
+            });
+        }
+
+        const populatedAttendance = await TAttendance.findById(attendance._id)
+            .populate('user', 'firstName lastName')
+            .populate('records.teacher', 'firstName lastName')
+            .populate('records.markedBy', 'firstName lastName');
+
+        res.status(201).json({
+            success: true,
+            data: populatedAttendance
+        });
+    } catch (error) {
+        console.error('Error creating teacher attendance record:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            error: error.message
+        });
+    }
+};
+
+ 
+
+// GET /api/attendance/student/:studentId
+exports.getStudentAttendance = async (req, res) => {
+    const { studentId } = req.params;
+
+    try {
+        const records = await Attendance.find({ 'records.student': studentId })
+            .populate('class', 'name grade section')
+            .populate('subject', 'name code')
+            .populate('teacher', 'firstName lastName')
+            .populate('records.student', 'firstName lastName rollNumber')
+            .populate('records.markedBy', 'firstName lastName')
+            .sort({ date: -1 });
+
+        // Filter records to only include the student's subdocument from each attendance
+        const filteredRecords = records.map(attendance => {
+            const studentRecord = attendance.records.find(
+                record => record.student._id.toString() === studentId
+            );
+
+            return {
+                _id: attendance._id,
+                class: attendance.class,
+                subject: attendance.subject,
+                date: attendance.date,
+                period: attendance.period,
+                teacher: attendance.teacher,
+                academicYear: attendance.academicYear,
+                status: attendance.status,
+                studentRecord
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            count: filteredRecords.length,
+            data: filteredRecords
+        });
+    } catch (error) {
+        console.error('Error retrieving student attendance:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};

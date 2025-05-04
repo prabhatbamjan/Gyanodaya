@@ -309,15 +309,15 @@ function Layout({ children }) {
              
               <li>
                 <Link 
-                  to="/teacher-results" 
+                  to="/teacher-exams" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/teacher-results') 
+                    isActive('/teacher-exams') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <Award className={`h-5 w-5 mr-3 ${isActive('/teacher-results') ? 'text-blue-600' : 'text-gray-500'}`} />
-                  <span>Results</span>
+                  <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/teacher-exams') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Exam Results</span>
                 </Link>
               </li>
               <li>

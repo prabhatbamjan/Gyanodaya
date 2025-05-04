@@ -394,6 +394,19 @@ function Layout({ children }) {
                   <span>Time Table</span>
                 </Link>
               </li>
+              <li>
+                <Link 
+                  to="/admin-exams" 
+                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                    isActive('/admin-exams') 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <ClipboardList className={`h-5 w-5 mr-2 ${isActive('/admin-exams') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>Exams</span>
+                </Link>
+              </li>
 
               <div className="px-3 pt-5 pb-2">
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Users</h3>

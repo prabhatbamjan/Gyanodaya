@@ -8,7 +8,8 @@ const {
     deleteStudent,
     getparents,
     getstudnetByclass,
-    getStudentsByClasses
+    getStudentsByClasses,
+   
 
 } = require('../controllers/studentController');
 const upload = require("../middleware/uplode");
@@ -32,6 +33,7 @@ router.route('/class/:id')
     .get(getstudnetByclass);
 router.route('/classes')
     .get(getStudentsByClasses);
+
 
 
 module.exports = router; 

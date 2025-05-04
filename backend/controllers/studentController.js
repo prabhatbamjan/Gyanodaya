@@ -344,6 +344,8 @@ exports.getStudentById = async (req, res) => {
       const { id } = req.params;
       console.log("Params received:", req.params); 
       const student = await Student.findById(id)
+                       .populate('class', 'name section')
+                       .populate('parent', '_idfirstName lastName email phone occupation relationship');
           
 
       if (!student) {
@@ -352,13 +354,13 @@ exports.getStudentById = async (req, res) => {
               message: 'Student not hello why not foundfound'
           });
       }
-      const parent = await Parent.findById(student.parent);
+      
 
       res.status(200).json({
           status: 'success',
           data: {
               student,
-              parent
+             
           }
       });
 
@@ -433,7 +435,7 @@ exports.updateStudentProfile = async (req, res) => {
 
 exports.getparents = async (req, res) => {
   try {
-    const parents = await Parent.find();
+    const parents = await Student.find().populate('parent' ,'_id firstName lastName email phone occupation relationship');
     res.status(200).json({ parents });
   } catch (error) {
     res.status(500).json({

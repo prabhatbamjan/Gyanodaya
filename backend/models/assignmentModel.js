@@ -1,81 +1,83 @@
 const mongoose = require('mongoose');
 
+const attachmentSchema = new mongoose.Schema({
+  filename: {
+    type: String,
+    required: true
+  },
+  originalName: {
+    type: String,
+    required: true
+  },
+  path: {
+    type: String,
+    required: true
+  },
+  size: Number,
+  mimetype: String,
+  uploadedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const assignmentSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please provide assignment title'],
-    trim: true,
-    maxlength: [100, 'Assignment title cannot exceed 100 characters']
+    required: [true, 'Assignment title is required'],
+    trim: true
   },
   description: {
     type: String,
-    required: [true, 'Please provide assignment description'],
     trim: true
-  },
-  classId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Class',
-    required: [true, 'Please provide class ID']
-  },
-  subjectId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subject',
-    required: [true, 'Please provide subject ID']
-  },
-  teacherId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teacher',
-    required: [true, 'Please provide teacher ID']
-  },
-  dueDate: {
-    type: Date,
-    required: [true, 'Please provide due date']
-  },
-  totalMarks: {
-    type: Number,
-    required: [true, 'Please provide total marks'],
-    min: [0, 'Total marks cannot be negative']
   },
   instructions: {
     type: String,
     trim: true
   },
-  attachments: [{
-    fileName: String,
-    filePath: String,
-    fileType: String,
-    fileSize: Number
-  }],
+  classId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Class',
+    required: [true, 'Class is required']
+  },
+  subjectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subject',
+    required: [true, 'Subject is required']
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Creator is required']
+  },
+  dueDate: {
+    type: Date,
+    required: [true, 'Due date is required']
+  },
+  totalMarks: {
+    type: Number,
+    required: [true, 'Total marks is required'],
+    min: [1, 'Total marks must be at least 1']
+  },
+  attachments: [attachmentSchema],
   isDraft: {
     type: Boolean,
     default: false
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  academicYear: {
+    type: String,
+    required: [true, 'Academic year is required']
   }
 }, {
-  toJSON: { virtuals: true },
-  toObject: { virtuals: true }
+  timestamps: true
 });
 
-// Virtual populate to get submission count
-assignmentSchema.virtual('submissionCount', {
-  ref: 'Submission',
-  localField: '_id',
-  foreignField: 'assignmentId',
-  count: true
-});
-
-// Index for faster queries
-assignmentSchema.index({ classId: 1, subjectId: 1, dueDate: 1 });
-assignmentSchema.index({ teacherId: 1 });
+// Create indexes for better performance
+assignmentSchema.index({ classId: 1, subjectId: 1 });
+assignmentSchema.index({ dueDate: 1 });
+assignmentSchema.index({ createdBy: 1 });
 assignmentSchema.index({ isDraft: 1 });
 
 const Assignment = mongoose.model('Assignment', assignmentSchema);
 
-module.exports = Assignment;
+module.exports = Assignment; 

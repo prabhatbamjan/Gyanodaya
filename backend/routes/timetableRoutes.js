@@ -1,40 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const {
-    getAllTimetables,
-    getTimetableByClass,
-    createTimetable,
-    updateTimetable,
-    deleteTimetable,  
-    teacherTimetable,
-    getTimetableById,
-    getClassesByTeacher,
-    
-} = require('../controllers/timetableController'); // Updated path to controllers directory
+  getAllTimetables,
+  getTimetableByClass,
+  getTimetableById,
+  createTimetable,
+  updateTimetable,
+  deleteTimetable,
+  teacherTimetable,
+  getClassesByTeacher,
+  getTeachersByClass
+} = require('../controllers/timetableController');
 
 // Get all timetables and create new timetable
 router.route('/')
-    .get(getAllTimetables)
-    .post(createTimetable);
+  .get(getAllTimetables)
+  .post(createTimetable);
+
+// Get, update, delete timetable by ID
+router.route('/:id')
+  .get(getTimetableById)
+  .put(updateTimetable)
+  .delete(deleteTimetable);
 
 // Get timetable by class
 router.route('/class/:classId')
-    .get(getTimetableByClass);
+  .get(getTimetableByClass);
 
-// Update and delete timetable
-router.route('/:id')
-    .get(getTimetableById)
-    .put(updateTimetable)
-    .delete(deleteTimetable);
-
-// Get classes for a specific teacher
-router.route('/teacher/class/:teacherId')
-    .get(getClassesByTeacher);
-
-// Get timetable for a specific teacher 
+// Get full timetable of a teacher
 router.route('/teacher/:teacherId')
-    .get(teacherTimetable);
+  .get(teacherTimetable);
 
+// Get all classes assigned to a teacher
+router.route('/teacher/classes/:teacherId')
+  .get(getClassesByTeacher);
 
+// Get all teachers assigned to a class
+router.route('/teachers/class/:classId')
+  .get(getTeachersByClass);
 
 module.exports = router;

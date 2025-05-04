@@ -14,14 +14,18 @@ const {
 const authController = require('../middleware/auth');
 
 
+// Protect all routes
+router.use(authController.protect);
+
 // User notification routes
 router.get('/my', getUserNotifications);
 router.post('/mark-all-read', markAllAsRead);
 router.post('/:id/mark-read', markAsRead);
-router.use(authController.protect);
+
 // Admin routes (restricted to admin)
+// router.use(authController);
 router.route('/')
-  .get( getAllNotifications)
+  .get(getAllNotifications)
   .post(createNotification);
 
 router.route('/:id')

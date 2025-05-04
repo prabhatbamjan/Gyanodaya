@@ -11,19 +11,43 @@ exports.getAllNotifications = async (req, res) => {
     // Apply filters if provided
     const filter = {};
     if (req.query.type) filter.type = req.query.type;
+    if (req.query.role) filter['recipients.roles'] = req.query.role;
+    if (req.query.isRead === 'true' || req.query.isRead === 'false') {
+      const isRead = req.query.isRead === 'true';
+      filter[isRead ? 'readBy.0' : 'readBy'] = isRead ? { $exists: true } : { $exists: false };
+    }
     
     const notifications = await Notification.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate('createdBy', 'firstName lastName')
-      .populate('readBy.user', 'firstName lastName');
+      .populate('readBy.user', 'firstName lastName')
+      .populate('recipients.users', 'firstName lastName role')
+      .populate('relatedTo.documentId', 'firstName lastName');
     
     const total = await Notification.countDocuments(filter);
     
+    // Add read count and recipient details
+    const notificationsWithDetails = notifications.map(notification => {
+      const notificationObj = notification.toObject();
+      notificationObj.readCount = notification.readBy.length;
+      notificationObj.totalRecipients = (
+        (notification.recipients?.users?.length || 0) +
+        (notification.recipients?.roles?.length || 0) +
+        (notification.isGlobal ? 1 : 0)
+      );
+      return notificationObj;
+    });
+    
     res.status(200).json({
       success: true,
-      data: notifications,
+      data: notificationsWithDetails,
+      stats: {
+        total,
+        read: notificationsWithDetails.reduce((acc, n) => acc + (n.readCount > 0 ? 1 : 0), 0),
+        unread: notificationsWithDetails.reduce((acc, n) => acc + (n.readCount === 0 ? 1 : 0), 0)
+      },
       pagination: {
         page,
         limit,
@@ -54,13 +78,19 @@ exports.getUserNotifications = async (req, res) => {
         { 'recipients.users': userId },
         { 'recipients.roles': userRole },
         { 'recipients.roles': 'all' },
-        { isGlobal: true }
+        { isGlobal: true },
+        // Add specific conditions for teacher notifications
+        ...(userRole === 'teacher' ? [{ 
+          'relatedTo.model': 'Teacher',
+          'relatedTo.documentId': userId
+        }] : [])
       ]
     })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .populate('createdBy', 'firstName lastName');
+      .populate('createdBy', 'firstName lastName')
+      .populate('relatedTo.documentId', 'firstName lastName');
     
     // Count total notifications
     const total = await Notification.countDocuments({
@@ -68,7 +98,11 @@ exports.getUserNotifications = async (req, res) => {
         { 'recipients.users': userId },
         { 'recipients.roles': userRole },
         { 'recipients.roles': 'all' },
-        { isGlobal: true }
+        { isGlobal: true },
+        ...(userRole === 'teacher' ? [{ 
+          'relatedTo.model': 'Teacher',
+          'relatedTo.documentId': userId
+        }] : [])
       ]
     });
     
@@ -255,11 +289,27 @@ exports.markAsRead = async (req, res) => {
       
       await notification.save();
     }
+
+    // Get updated unread count
+    const unreadCount = await Notification.countDocuments({
+      $or: [
+        { 'recipients.users': userId },
+        { 'recipients.roles': req.user.role },
+        { 'recipients.roles': 'all' },
+        { isGlobal: true },
+        ...(req.user.role === 'teacher' ? [{ 
+          'relatedTo.model': 'Teacher',
+          'relatedTo.documentId': userId
+        }] : [])
+      ],
+      'readBy.user': { $ne: userId }
+    });
     
     res.status(200).json({
       success: true,
       message: 'Notification marked as read',
-      data: notification
+      data: notification,
+      unreadCount
     });
   } catch (error) {
     res.status(500).json({
@@ -275,32 +325,50 @@ exports.markAllAsRead = async (req, res) => {
     const userId = req.user._id;
     const userRole = req.user.role;
     
-    // Find all notifications for this user
-    const notifications = await Notification.find({
+    // Mark all matching notifications as read
+    await Notification.updateMany(
+      {
+        $or: [
+          { 'recipients.users': userId },
+          { 'recipients.roles': userRole },
+          { 'recipients.roles': 'all' },
+          { isGlobal: true },
+          ...(userRole === 'teacher' ? [{ 
+            'relatedTo.model': 'Teacher',
+            'relatedTo.documentId': userId
+          }] : [])
+        ],
+        'readBy.user': { $ne: userId }
+      },
+      {
+        $push: {
+          readBy: {
+            user: userId,
+            readAt: new Date()
+          }
+        }
+      }
+    );
+
+    // Get updated unread count
+    const unreadCount = await Notification.countDocuments({
       $or: [
         { 'recipients.users': userId },
         { 'recipients.roles': userRole },
         { 'recipients.roles': 'all' },
-        { isGlobal: true }
+        { isGlobal: true },
+        ...(userRole === 'teacher' ? [{ 
+          'relatedTo.model': 'Teacher',
+          'relatedTo.documentId': userId
+        }] : [])
       ],
-      // Not already read by this user
-      readBy: { $not: { $elemMatch: { user: userId } } }
+      'readBy.user': { $ne: userId }
     });
-    
-    // Add user to readBy for each notification
-    const updatePromises = notifications.map(notification => {
-      notification.readBy.push({
-        user: userId,
-        readAt: new Date()
-      });
-      return notification.save();
-    });
-    
-    await Promise.all(updatePromises);
     
     res.status(200).json({
       success: true,
-      message: `${updatePromises.length} notifications marked as read`
+      message: 'All notifications marked as read',
+      unreadCount
     });
   } catch (error) {
     res.status(500).json({

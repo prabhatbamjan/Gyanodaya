@@ -14,20 +14,19 @@ const TeacherMarkAttendance = () => {
   const [subjects, setSubjects] = useState([]);
   const [students, setStudents] = useState([]);
   const [teacherTimetables, setTeacherTimetables] = useState([]);
-  
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
   const userdata = getUserData();
+
   const [formData, setFormData] = useState({
     class: '',
     subject: '',
     date: new Date().toISOString().split('T')[0],
     period: '',
     records: [],
-    teacher:userdata.id,
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+    teacher: userdata.id,
+    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
   });
- 
-
-
 
   useEffect(() => {
     fetchTeacherData();
@@ -37,8 +36,12 @@ const TeacherMarkAttendance = () => {
     if (formData.class) {
       updateSubjectsForClass(formData.class);
       fetchStudentsForClass(formData.class);
+
+      const selectedClass = classes.find(cls => cls._id === formData.class);
+      const isTeacher = selectedClass?.classTeacher?._id === userdata.id;
+      setIsAuthorized(isTeacher);
     }
-  }, [formData.class]);
+  }, [formData.class, classes]);
 
   const fetchTeacherData = async () => {
     setLoading(true);
@@ -50,7 +53,7 @@ const TeacherMarkAttendance = () => {
 
       const allClasses = classesRes.data.data || [];
       const teacherData = teacherRes.data.data || [];
-  console.log(allClasses)
+
       setTeacherTimetables(teacherData);
 
       const classIds = new Set();
@@ -96,7 +99,7 @@ const TeacherMarkAttendance = () => {
             student: student._id,
             status: 'present',
             remarks: '',
-            markedBy:userdata.id
+            markedBy: userdata.id
           }))
         }));
       }
@@ -113,16 +116,12 @@ const TeacherMarkAttendance = () => {
 
   const handleSubjectChange = e => {
     const subjectId = e.target.value;
-
-    // Find timetable with matching class and subject
     const matchingTimetable = teacherTimetables.find(t =>
       t.class?._id === formData.class &&
       t.periods?.some(p => p.subject?._id === subjectId)
     );
 
     const matchingPeriod = matchingTimetable?.periods?.find(p => p.subject?._id === subjectId);
-
-    // Get academic year from class if it exists
     const selectedClass = classes.find(cls => cls._id === formData.class);
     const academicYearFromClass = selectedClass?.academicYear || formData.academicYear;
 
@@ -154,17 +153,26 @@ const TeacherMarkAttendance = () => {
 
   const handleSubmit = async e => {
     e.preventDefault();
+
+    if (!isAuthorized) {
+      alert('You are not authorized to mark attendance for this class.');
+      return;
+    }
+
     setSaving(true);
     try {
       if (!formData.class || !formData.subject || !formData.date || !formData.period) {
         throw new Error('Please fill in all required fields');
       }
+
       const today = new Date().toISOString().split('T')[0];
       if (formData.date !== today) {
         throw new Error('You can only mark attendance for today.');
       }
+
       const res = await authAxios.post('attendance/', formData);
       if (!res.data.success) throw new Error(res.data.message);
+
       alert('Attendance saved!');
       navigate('/teacher-attendance');
     } catch (err) {
@@ -183,17 +191,35 @@ const TeacherMarkAttendance = () => {
         <h1 className="text-2xl font-semibold mb-4">Mark Attendance</h1>
 
         {error && <div className="bg-red-100 p-4 rounded text-red-700">{error}</div>}
+        {!isAuthorized && formData.class && (
+          <div className="bg-yellow-100 p-4 rounded text-yellow-700">
+            You are not the class teacher for this class and cannot mark attendance.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded shadow">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select name="class" value={formData.class} onChange={handleInputChange} required className="border p-2 rounded">
+            <select
+              name="class"
+              value={formData.class}
+              onChange={handleInputChange}
+              required
+              className="border p-2 rounded"
+            >
               <option value="">Select Class</option>
               {classes.map(cls => (
                 <option key={cls._id} value={cls._id}>{cls.name} - {cls.section}</option>
               ))}
             </select>
 
-            <select name="subject" value={formData.subject} onChange={handleSubjectChange} required className="border p-2 rounded">
+            <select
+              name="subject"
+              value={formData.subject}
+              onChange={handleSubjectChange}
+              required
+              className="border p-2 rounded"
+              disabled={!isAuthorized}
+            >
               <option value="">Select Subject</option>
               {subjects.map(sub => (
                 <option key={sub._id} value={sub._id}>{sub.name}</option>
@@ -207,6 +233,7 @@ const TeacherMarkAttendance = () => {
               onChange={handleInputChange}
               className="border p-2 rounded"
               required
+              disabled={!isAuthorized}
             />
           </div>
 
@@ -247,6 +274,7 @@ const TeacherMarkAttendance = () => {
                             type="button"
                             key={status}
                             onClick={() => handleStudentStatusChange(student._id, status)}
+                            disabled={!isAuthorized}
                             className={`px-3 py-1 rounded-full text-white font-medium ${
                               record?.status === status
                                 ? status === 'present' ? 'bg-green-600' :
@@ -264,6 +292,7 @@ const TeacherMarkAttendance = () => {
                           placeholder="Remarks"
                           value={record?.remarks || ''}
                           onChange={(e) => handleStudentRemarksChange(student._id, e.target.value)}
+                          disabled={!isAuthorized}
                           className="border rounded px-2 py-1"
                         />
                       </div>
@@ -275,7 +304,11 @@ const TeacherMarkAttendance = () => {
           )}
 
           <div className="flex justify-end">
-            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded flex items-center" disabled={saving}>
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-4 py-2 rounded flex items-center"
+              disabled={saving || !isAuthorized}
+            >
               {saving ? (
                 <>
                   <span className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></span>

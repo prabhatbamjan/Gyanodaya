@@ -5,7 +5,7 @@ const Cloudinary =require('../middleware/cloudnery')
 
 
 const fs = require("fs");
-const { error } = require('console');
+
 require("dotenv").config();
 
 // @desc    Get all teachers

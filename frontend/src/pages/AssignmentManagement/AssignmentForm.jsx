@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
   Save, 
   Clock, 
   Calendar, 
   FileText, 
-  BookOpen,
-  Users,
   Upload,
   AlertCircle,
   X,
   ArrowLeft
 } from "lucide-react";
 import Layout from "../../components/layoutes/teacherlayout";
-import authAxios from "../../utils/auth";
+import authAxios, { getUserData } from "../../utils/auth";
 import Loader from "../../components/Loader";
 
 const AssignmentForm = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const isEditMode = Boolean(id);
+  const userData = getUserData();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -36,54 +33,41 @@ const AssignmentForm = () => {
 
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [allSubjects, setAllSubjects] = useState([]);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
   const [newAttachments, setNewAttachments] = useState([]);
-  const [attachmentsToRemove, setAttachmentsToRemove] = useState([]);
+  const [teacherTimetables, setTeacherTimetables] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
+        setServerError("");
 
-        // Fetch classes and subjects taught by this teacher
-        const [classesRes, subjectsRes] = await Promise.all([
-          authAxios.get("/classes/teacher"),
-          authAxios.get("/subjects/teacher")
+        const [classesRes, subjectsRes, timetablesRes] = await Promise.all([
+          authAxios.get("classes"),
+          authAxios.get("subjects"),
+          authAxios.get(`timetables/teacher/class/${userData.id}`)
         ]);
 
-        setClasses(classesRes.data.data || []);
-        setSubjects(subjectsRes.data.data || []);
+        const allClasses = classesRes.data.data || [];
+        const subjectsData = subjectsRes.data.data || [];
+        const teacherData = timetablesRes.data.data || [];
 
-        // If editing, fetch assignment details
-        if (isEditMode) {
-          const assignmentRes = await authAxios.get(`/assignments/${id}`);
-          const assignment = assignmentRes.data.data;
+        setTeacherTimetables(teacherData);
+        setAllSubjects(subjectsData);
 
-          if (assignment) {
-            // Parse due date and time from the ISO date string
-            const dueDateTime = new Date(assignment.dueDate);
-            const dueDate = dueDateTime.toISOString().split('T')[0];
-            const hours = dueDateTime.getHours().toString().padStart(2, '0');
-            const minutes = dueDateTime.getMinutes().toString().padStart(2, '0');
-            const dueTime = `${hours}:${minutes}`;
+        const classIds = new Set();
+        teacherData.forEach(timetable => {
+          if (timetable.class?._id) classIds.add(timetable.class._id);
+        });
 
-            setFormData({
-              title: assignment.title || "",
-              description: assignment.description || "",
-              classId: assignment.classId || "",
-              subjectId: assignment.subjectId || "",
-              dueDate,
-              dueTime,
-              totalMarks: assignment.totalMarks || 100,
-              attachments: assignment.attachments || [],
-              instructions: assignment.instructions || "",
-              isDraft: assignment.isDraft || false
-            });
-          }
-        }
+        const filteredClasses = allClasses.filter(cls => classIds.has(cls._id));
+        setClasses(filteredClasses);
+
       } catch (err) {
         console.error("Failed to load data:", err);
         setServerError("Failed to load data. Please try again.");
@@ -93,35 +77,44 @@ const AssignmentForm = () => {
     };
 
     loadData();
-  }, [id, isEditMode]);
+  }, [userData.id]);
+
+  useEffect(() => {
+    if (formData.classId) {
+      updateSubjectsForClass(formData.classId);
+    } else {
+      setSubjects([]);
+    }
+  }, [formData.classId, teacherTimetables]);
+
+  const updateSubjectsForClass = (classId) => {
+    const classSubjects = teacherTimetables
+      .filter(t => t.class?._id === classId)
+      .flatMap(t => t.periods || [])
+      .map(p => p.subject)
+      .filter((subj, index, self) => 
+        subj && self.findIndex(s => s?._id === subj?._id) === index
+      );
+
+    if (classSubjects.length === 0) {
+      const filteredSubjects = allSubjects.filter(
+        subject => subject.class === classId || subject.class?._id === classId
+      );
+      setSubjects(filteredSubjects);
+    } else {
+      setSubjects(classSubjects);
+    }
+  };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required";
-    }
-
-    if (!formData.classId) {
-      newErrors.classId = "Class is required";
-    }
-
-    if (!formData.subjectId) {
-      newErrors.subjectId = "Subject is required";
-    }
-
-    if (!formData.dueDate) {
-      newErrors.dueDate = "Due date is required";
-    }
-
-    if (!formData.dueTime) {
-      newErrors.dueTime = "Due time is required";
-    }
-
-    if (formData.totalMarks <= 0) {
-      newErrors.totalMarks = "Total marks must be greater than 0";
-    }
-
+    if (!formData.title.trim()) newErrors.title = "Title is required";
+    if (!formData.classId) newErrors.classId = "Class is required";
+    if (!formData.subjectId) newErrors.subjectId = "Subject is required";
+    if (!formData.dueDate) newErrors.dueDate = "Due date is required";
+    if (!formData.dueTime) newErrors.dueTime = "Due time is required";
+    if (formData.totalMarks <= 0) newErrors.totalMarks = "Total marks must be greater than 0";
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -129,11 +122,7 @@ const AssignmentForm = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
+    if (errors[name]) setErrors({ ...errors, [name]: "" });
   };
 
   const handleCheckboxChange = (e) => {
@@ -142,42 +131,26 @@ const AssignmentForm = () => {
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setNewAttachments([...newAttachments, ...files]);
+    setNewAttachments([...newAttachments, ...Array.from(e.target.files)]);
   };
 
   const removeNewAttachment = (index) => {
     setNewAttachments(newAttachments.filter((_, i) => i !== index));
   };
 
-  const removeExistingAttachment = (attachmentId) => {
-    setFormData({
-      ...formData,
-      attachments: formData.attachments.filter(a => a._id !== attachmentId)
-    });
-    setAttachmentsToRemove([...attachmentsToRemove, attachmentId]);
-  };
-
   const handleSubmit = async (e, asDraft = false) => {
     e.preventDefault();
-    
-    // Set draft status based on button clicked
     const dataToSubmit = { ...formData, isDraft: asDraft };
     
-    // Validate unless saving as draft
-    if (!asDraft && !validateForm()) {
-      return;
-    }
+    if (!asDraft && !validateForm()) return;
 
     try {
       setSubmitting(true);
       setServerError("");
 
-      // Combine date and time into a single ISO string
       const dueDateTime = new Date(`${dataToSubmit.dueDate}T${dataToSubmit.dueTime}`);
-      
-      // Create FormData object for file uploads
       const formDataObj = new FormData();
+      
       formDataObj.append("title", dataToSubmit.title);
       formDataObj.append("description", dataToSubmit.description);
       formDataObj.append("classId", dataToSubmit.classId);
@@ -187,30 +160,14 @@ const AssignmentForm = () => {
       formDataObj.append("instructions", dataToSubmit.instructions);
       formDataObj.append("isDraft", dataToSubmit.isDraft);
 
-      // Add new files
       newAttachments.forEach(file => {
         formDataObj.append("attachments", file);
       });
 
-      // Add attachments to remove if editing
-      if (isEditMode && attachmentsToRemove.length > 0) {
-        attachmentsToRemove.forEach(id => {
-          formDataObj.append("removeAttachments", id);
-        });
-      }
+      await authAxios.post("assignments", formDataObj, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
 
-      // Create or update assignment
-      if (isEditMode) {
-        await authAxios.put(`/assignments/${id}`, formDataObj, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-      } else {
-        await authAxios.post("/assignments", formDataObj, {
-          headers: { "Content-Type": "multipart/form-data" }
-        });
-      }
-
-      // Redirect to assignments page
       navigate("/assignments");
     } catch (err) {
       console.error("Failed to save assignment:", err);
@@ -242,12 +199,10 @@ const AssignmentForm = () => {
             Back to Assignments
           </button>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? "Edit Assignment" : "Create New Assignment"}
+            Create New Assignment
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {isEditMode
-              ? "Update assignment details"
-              : "Create a new assignment for your students"}
+            Create a new assignment for your students
           </p>
         </div>
 
@@ -262,10 +217,9 @@ const AssignmentForm = () => {
 
         <form onSubmit={(e) => handleSubmit(e, false)}>
           <div className="space-y-8">
-            {/* Basic Info */}
+            {/* Basic Information Section */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h2 className="mb-4 text-lg font-medium text-gray-900">Basic Information</h2>
-              
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -281,9 +235,7 @@ const AssignmentForm = () => {
                     } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
                     placeholder="Enter assignment title"
                   />
-                  {errors.title && (
-                    <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-                  )}
+                  {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
                 </div>
 
                 <div>
@@ -301,13 +253,11 @@ const AssignmentForm = () => {
                     <option value="">Select Class</option>
                     {classes.map((cls) => (
                       <option key={cls._id} value={cls._id}>
-                        {cls.name}
+                        {cls.name} {cls.section ? `- ${cls.section}` : ''}
                       </option>
                     ))}
                   </select>
-                  {errors.classId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.classId}</p>
-                  )}
+                  {errors.classId && <p className="mt-1 text-sm text-red-600">{errors.classId}</p>}
                 </div>
 
                 <div>
@@ -321,6 +271,7 @@ const AssignmentForm = () => {
                     className={`mt-1 block w-full rounded-md border ${
                       errors.subjectId ? "border-red-500" : "border-gray-300"
                     } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
+                    disabled={!formData.classId || subjects.length === 0}
                   >
                     <option value="">Select Subject</option>
                     {subjects.map((subject) => (
@@ -328,18 +279,20 @@ const AssignmentForm = () => {
                         {subject.name}
                       </option>
                     ))}
+                    {subjects.length === 0 && formData.classId && (
+                      <option value="" disabled>
+                        No subjects available for this class
+                      </option>
+                    )}
                   </select>
-                  {errors.subjectId && (
-                    <p className="mt-1 text-sm text-red-600">{errors.subjectId}</p>
-                  )}
+                  {errors.subjectId && <p className="mt-1 text-sm text-red-600">{errors.subjectId}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Description and Instructions */}
+            {/* Details Section */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h2 className="mb-4 text-lg font-medium text-gray-900">Details</h2>
-              
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -351,13 +304,13 @@ const AssignmentForm = () => {
                     onChange={handleInputChange}
                     rows={4}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Provide a brief description of the assignment"
+                    placeholder="Provide a brief description"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Instructions for Students
+                    Instructions
                   </label>
                   <textarea
                     name="instructions"
@@ -365,16 +318,15 @@ const AssignmentForm = () => {
                     onChange={handleInputChange}
                     rows={6}
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Provide detailed instructions for completing the assignment"
+                    placeholder="Provide detailed instructions"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Schedule and Marks */}
+            {/* Schedule & Evaluation Section */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h2 className="mb-4 text-lg font-medium text-gray-900">Schedule & Evaluation</h2>
-              
               <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -394,9 +346,7 @@ const AssignmentForm = () => {
                       } pl-10 pr-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
                     />
                   </div>
-                  {errors.dueDate && (
-                    <p className="mt-1 text-sm text-red-600">{errors.dueDate}</p>
-                  )}
+                  {errors.dueDate && <p className="mt-1 text-sm text-red-600">{errors.dueDate}</p>}
                 </div>
 
                 <div>
@@ -417,9 +367,7 @@ const AssignmentForm = () => {
                       } pl-10 pr-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
                     />
                   </div>
-                  {errors.dueTime && (
-                    <p className="mt-1 text-sm text-red-600">{errors.dueTime}</p>
-                  )}
+                  {errors.dueTime && <p className="mt-1 text-sm text-red-600">{errors.dueTime}</p>}
                 </div>
 
                 <div>
@@ -436,52 +384,17 @@ const AssignmentForm = () => {
                       errors.totalMarks ? "border-red-500" : "border-gray-300"
                     } px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500`}
                   />
-                  {errors.totalMarks && (
-                    <p className="mt-1 text-sm text-red-600">{errors.totalMarks}</p>
-                  )}
+                  {errors.totalMarks && <p className="mt-1 text-sm text-red-600">{errors.totalMarks}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Attachments */}
+            {/* Attachments Section */}
             <div className="rounded-lg bg-white p-6 shadow">
               <h2 className="mb-4 text-lg font-medium text-gray-900">Attachments</h2>
-              
-              {/* Existing attachments if editing */}
-              {isEditMode && formData.attachments.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="mb-2 text-sm font-medium text-gray-700">Current Files</h3>
-                  <ul className="space-y-2">
-                    {formData.attachments.map((attachment) => (
-                      <li
-                        key={attachment._id}
-                        className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2"
-                      >
-                        <div className="flex items-center">
-                          <FileText className="mr-2 h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-700">
-                            {attachment.originalName || attachment.filename}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeExistingAttachment(attachment._id)}
-                          className="ml-2 text-gray-400 hover:text-red-500"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* New attachments */}
               {newAttachments.length > 0 && (
                 <div className="mb-4">
-                  <h3 className="mb-2 text-sm font-medium text-gray-700">
-                    New Files to Upload
-                  </h3>
+                  <h3 className="mb-2 text-sm font-medium text-gray-700">Files to Upload</h3>
                   <ul className="space-y-2">
                     {newAttachments.map((file, index) => (
                       <li
@@ -505,7 +418,6 @@ const AssignmentForm = () => {
                 </div>
               )}
 
-              {/* File upload input */}
               <div className="mt-2">
                 <label
                   htmlFor="file-upload"
@@ -515,7 +427,6 @@ const AssignmentForm = () => {
                   <span>Add Files</span>
                   <input
                     id="file-upload"
-                    name="attachments"
                     type="file"
                     multiple
                     onChange={handleFileChange}
@@ -523,12 +434,12 @@ const AssignmentForm = () => {
                   />
                 </label>
                 <p className="mt-1 text-xs text-gray-500">
-                  Upload any supporting documents or materials (PDF, DOCX, images, etc.)
+                  Supported formats: PDF, DOCX, images
                 </p>
               </div>
             </div>
 
-            {/* Publish Controls */}
+            {/* Form Actions */}
             <div className="flex items-center justify-between rounded-lg bg-white p-6 shadow">
               <div className="flex items-center">
                 <input
@@ -540,7 +451,7 @@ const AssignmentForm = () => {
                   className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <label htmlFor="isDraft" className="ml-2 text-sm text-gray-700">
-                  Save as draft (not visible to students)
+                  Save as draft
                 </label>
               </div>
 
@@ -566,7 +477,7 @@ const AssignmentForm = () => {
                   disabled={submitting}
                 >
                   <Save className="mr-2 h-4 w-4" />
-                  {isEditMode ? "Update Assignment" : "Publish Assignment"}
+                  Publish Assignment
                 </button>
               </div>
             </div>
@@ -577,4 +488,4 @@ const AssignmentForm = () => {
   );
 };
 
-export default AssignmentForm; 
+export default AssignmentForm;

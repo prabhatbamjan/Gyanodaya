@@ -35,7 +35,7 @@ const AddNotification = () => {
       try {
         const res = await authAxios.get('/teachers');
         const res2 = await authAxios.get('/students'); 
-        const res3 = await authAxios.get('/students/parents'); 
+        const res3 = await authAxios.get('/parents'); 
 
         console.log('Parents response:', res3.data);
 

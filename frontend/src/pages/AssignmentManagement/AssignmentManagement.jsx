@@ -7,23 +7,27 @@ import {
   Users,
   Search,
   Filter,
-  MoreVertical,
   Edit,
   Trash2,
   CheckCircle,
   Download,
-  BookOpen
+  BookOpen,
+  Eye
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Layout from "../../components/layoutes/teacherlayout";
-import authAxios from "../../utils/auth";
+import authAxios, { getUserData } from "../../utils/auth";
 import Loader from "../../components/Loader";
 
 const AssignmentManagement = () => {
+  const userData = getUserData();
+  
   const [loading, setLoading] = useState(true);
   const [assignments, setAssignments] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [allSubjects, setAllSubjects] = useState([]);
+  const [teacherTimetables, setTeacherTimetables] = useState([]);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   
@@ -38,9 +42,6 @@ const AssignmentManagement = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   
-  // Show/hide action menu for specific assignment
-  const [actionMenuId, setActionMenuId] = useState(null);
-
   // Modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteAssignmentId, setDeleteAssignmentId] = useState(null);
@@ -49,6 +50,15 @@ const AssignmentManagement = () => {
   useEffect(() => {
     fetchData();
   }, [page, activeTab, classFilter, subjectFilter, statusFilter, searchTerm, dateRange]);
+  
+  // Update subjects when class filter changes
+  useEffect(() => {
+    if (classFilter) {
+      updateSubjectsForClass(classFilter);
+    } else {
+      setSubjects(allSubjects);
+    }
+  }, [classFilter, teacherTimetables, allSubjects]);
 
   const fetchData = async () => {
     try {
@@ -72,18 +82,40 @@ const AssignmentManagement = () => {
 
       // Fetch assignments
       const assignmentsRes = await authAxios.get(`/assignments/teacher?${params}`);
+      console.log(assignmentsRes.data.data);
       
       setAssignments(assignmentsRes.data.data || []);
       setTotalPages(assignmentsRes.data.totalPages || 1);
 
-      // Fetch classes and subjects taught by this teacher
-      const [classesRes, subjectsRes] = await Promise.all([
-        authAxios.get("/classes/teacher"),
-        authAxios.get("/subjects/teacher")
+      // Fetch classes, subjects and timetables for the teacher
+      const [classesRes, subjectsRes, timetablesRes] = await Promise.all([
+        authAxios.get("/classes"),
+        authAxios.get("/subjects"),
+        authAxios.get(`/timetables/teacher/class/${userData.id}`)
       ]);
 
-      setClasses(classesRes.data.data || []);
-      setSubjects(subjectsRes.data.data || []);
+      const allClasses = classesRes.data.data || [];
+      const subjectsData = subjectsRes.data.data || [];
+      const teacherData = timetablesRes.data.data || [];
+
+      setTeacherTimetables(teacherData);
+      setAllSubjects(subjectsData);
+
+      // Filter classes that teacher is assigned to
+      const classIds = new Set();
+      teacherData.forEach(timetable => {
+        if (timetable.class?._id) classIds.add(timetable.class._id);
+      });
+
+      const filteredClasses = allClasses.filter(cls => classIds.has(cls._id));
+      setClasses(filteredClasses);
+
+      // Set subjects based on current class filter or all subjects if no filter
+      if (classFilter) {
+        updateSubjectsForClass(classFilter);
+      } else {
+        setSubjects(subjectsData);
+      }
     } catch (err) {
       console.error("Failed to fetch assignments:", err);
       setError("Failed to load assignments. Please try again.");
@@ -92,11 +124,44 @@ const AssignmentManagement = () => {
     }
   };
 
+  const updateSubjectsForClass = (classId) => {
+    // First try to find subjects through timetable
+    const classSubjects = teacherTimetables
+      .filter(t => t.class?._id === classId)
+      .flatMap(t => t.periods || [])
+      .map(p => p.subject)
+      .filter((subj, index, self) => 
+        subj && self.findIndex(s => s?._id === subj?._id) === index
+      );
+
+    // If no subjects found through timetable, try using all subjects that match the class
+    if (classSubjects.length === 0) {
+      const filteredSubjects = allSubjects.filter(
+        subject => subject.class === classId || subject.class?._id === classId
+      );
+      setSubjects(filteredSubjects);
+    } else {
+      setSubjects(classSubjects);
+    }
+
+    // Reset subject filter if previously selected subject is not available for the new class
+    if (subjectFilter) {
+      const subjectStillValid = classSubjects.some(
+        s => s?._id === subjectFilter
+      ) || allSubjects.some(
+        s => (s.class === classId || s.class?._id === classId) && s._id === subjectFilter
+      );
+      
+      if (!subjectStillValid) {
+        setSubjectFilter("");
+      }
+    }
+  };
+
   const handleDeleteClick = (assignment) => {
     setDeleteAssignmentId(assignment._id);
     setDeleteAssignmentTitle(assignment.title);
     setShowDeleteModal(true);
-    setActionMenuId(null);
   };
 
   const handleConfirmDelete = async () => {
@@ -130,8 +195,6 @@ const AssignmentManagement = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
-      setActionMenuId(null);
     } catch (err) {
       console.error("Failed to download submissions:", err);
       setError("Failed to download submissions. Please try again.");
@@ -290,7 +353,7 @@ const AssignmentManagement = () => {
                 <option value="">All Classes</option>
                 {classes.map((c) => (
                   <option key={c._id} value={c._id}>
-                    {c.name}
+                    {c.name} {c.section ? `- ${c.section}` : ''}
                   </option>
                 ))}
               </select>
@@ -300,6 +363,7 @@ const AssignmentManagement = () => {
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
                 className="block w-full rounded-md border border-gray-200 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                disabled={classFilter && subjects.length === 0}
               >
                 <option value="">All Subjects</option>
                 {subjects.map((s) => (
@@ -307,6 +371,11 @@ const AssignmentManagement = () => {
                     {s.name}
                   </option>
                 ))}
+                {subjects.length === 0 && classFilter && (
+                  <option value="" disabled>
+                    No subjects available for this class
+                  </option>
+                )}
               </select>
             </div>
           </div>
@@ -417,10 +486,10 @@ const AssignmentManagement = () => {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="font-medium text-gray-900">
-                              {assignment.className}
+                            Class {assignment.classId.name} -{assignment.classId.section}
                             </span>
                             <span className="text-sm text-gray-500">
-                              {assignment.subjectName}
+                              {assignment.subjectId.name}
                             </span>
                           </div>
                         </td>
@@ -469,42 +538,30 @@ const AssignmentManagement = () => {
                           </span>
                         </td>
                         <td className="relative px-6 py-4 text-right">
-                          <button
-                            onClick={() =>
-                              setActionMenuId(
-                                actionMenuId === assignment._id ? null : assignment._id
-                              )
-                            }
-                            className="text-gray-500 hover:text-gray-700"
-                          >
-                            <MoreVertical className="h-5 w-5" />
-                          </button>
-
-                          {actionMenuId === assignment._id && (
-                            <div className="absolute right-0 top-full z-10 mt-1 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                              <Link
-                                to={`/assignments/edit/${assignment._id}`}
-                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              >
-                                <Edit className="mr-2 h-4 w-4 text-gray-500" />
-                                Edit Assignment
-                              </Link>
-                              <Link
-                                to={`/assignments/grading/${assignment._id}`}
-                                className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4 text-gray-500" />
-                                View Submissions
-                              </Link>
-                              <button
-                                onClick={() => handleDeleteClick(assignment)}
-                                className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Assignment
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-end space-x-2">
+                            
+                            <Link
+                              to={`/assignments/edit/${assignment._id}`}
+                              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                              title="Edit Assignment"
+                            >
+                              <Edit className="h-5 w-5" />
+                            </Link>
+                            <Link
+                              to={`/assignments/grading/${assignment._id}`}
+                              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                              title="View Submissions"
+                            >
+                              <CheckCircle className="h-5 w-5" />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteClick(assignment)}
+                              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                              title="Delete Assignment"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
