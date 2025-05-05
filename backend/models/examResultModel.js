@@ -4,17 +4,17 @@ const examResultSchema = new mongoose.Schema({
   exam: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam',
-    required: [true, 'Exam is required']
+    required: true
   },
   student: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
-    required: [true, 'Student is required']
+    required: true
   },
   class: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Class',
-    required: [true, 'Class is required']
+    required: true
   },
   subjectResults: [{
     subject: {
@@ -24,16 +24,15 @@ const examResultSchema = new mongoose.Schema({
     },
     marksObtained: {
       type: Number,
-      required: [true, 'Marks obtained is required'],
-      min: [0, 'Marks cannot be negative']
+      required: true,
+      min: 0
     },
     remarks: String,
-    grade: String,
     status: {
       type: String,
-      enum: ['Pass', 'Fail'],
-      required: true
-    }
+      enum: ['Pass', 'Fail']
+    },
+    grade: String
   }],
   totalMarksObtained: {
     type: Number,
@@ -60,16 +59,10 @@ const examResultSchema = new mongoose.Schema({
     type: String,
     required: true
   }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// Create indexes for better query performance
 examResultSchema.index({ exam: 1, student: 1 }, { unique: true });
-examResultSchema.index({ class: 1, academicYear: 1 });
-examResultSchema.index({ student: 1, academicYear: 1 });
 
-// Calculate grade based on percentage
 examResultSchema.methods.calculateGrade = function(percentage) {
   if (percentage >= 90) return 'A+';
   if (percentage >= 80) return 'A';
@@ -80,35 +73,54 @@ examResultSchema.methods.calculateGrade = function(percentage) {
   return 'F';
 };
 
-// Pre-save middleware to calculate total marks, percentage, and grade
-examResultSchema.pre('save', async function(next) {
-  // Calculate total marks obtained
-  this.totalMarksObtained = this.subjectResults.reduce((total, subject) => total + subject.marksObtained, 0);
-  
-  // Get exam details for total marks
-  const exam = await mongoose.model('Exam').findById(this.exam);
-  if (!exam) {
-    return next(new Error('Exam not found'));
+examResultSchema.methods.calculateGrade = function (percentage) {
+  if (percentage >= 90) return 'A+';
+  if (percentage >= 80) return 'A';
+  if (percentage >= 70) return 'B+';
+  if (percentage >= 60) return 'B';
+  if (percentage >= 50) return 'C+';
+  if (percentage >= 40) return 'C';
+  return 'F';
+};
+
+examResultSchema.pre('save', async function (next) {
+  if (!this.subjectResults || this.subjectResults.length === 0) {
+    return next(new Error('Subject results are required'));
   }
-  
-  // Calculate percentage
-  this.percentage = (this.totalMarksObtained / (exam.totalMarks * this.subjectResults.length)) * 100;
-  
-  // Calculate overall grade
+
+  if (!this.subjectResults.every(s => typeof s.marksObtained === 'number')) {
+    return next(new Error('All subject results must have valid marksObtained'));
+  }
+
+  const exam = await mongoose.model('Exam').findById(this.exam);
+  if (!exam || !exam.totalMarks || !exam.passingMarks) {
+    return next(new Error('Exam not found or missing total/passing marks'));
+  }
+
+  const subjectCount = this.subjectResults.length;
+
+  this.totalMarksObtained = this.subjectResults.reduce((sum, s) => sum + s.marksObtained, 0);
+  this.percentage = (this.totalMarksObtained / (exam.totalMarks * subjectCount)) * 100;
   this.grade = this.calculateGrade(this.percentage);
-  
-  // Set overall status
-  this.status = this.percentage >= (exam.passingMarks / exam.totalMarks * 100) ? 'Pass' : 'Fail';
-  
-  // Calculate subject-wise grades and status
-  this.subjectResults.forEach(subject => {
+
+  // Update subject results with grade and status
+  this.subjectResults = this.subjectResults.map(subject => {
     const subjectPercentage = (subject.marksObtained / exam.totalMarks) * 100;
-    subject.grade = this.calculateGrade(subjectPercentage);
-    subject.status = subjectPercentage >= (exam.passingMarks / exam.totalMarks * 100) ? 'Pass' : 'Fail';
+    const subjectStatus = subjectPercentage >= (exam.passingMarks / exam.totalMarks * 100) ? 'Pass' : 'Fail';
+    return {
+      ...subject,
+      grade: this.calculateGrade(subjectPercentage),
+      status: subjectStatus
+    };
   });
+
+  // If any subject is failed, set overall status to Fail
+  const anySubjectFailed = this.subjectResults.some(sub => sub.status === 'Fail');
+  this.status = anySubjectFailed ? 'Fail' : 'Pass';
 
   next();
 });
+
 
 const ExamResult = mongoose.model('ExamResult', examResultSchema);
 module.exports = ExamResult;

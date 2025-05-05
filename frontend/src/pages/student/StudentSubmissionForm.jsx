@@ -32,6 +32,7 @@ const StudentSubmissionForm = () => {
     content: "",
     attachments: []
   });
+  const isPastDue = assignment ? new Date() > new Date(assignment.dueDate) : false;
 
   useEffect(() => {
     const fetchAssignment = async () => {
@@ -89,6 +90,11 @@ const StudentSubmissionForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+        
+    if (isPastDue) {
+      setError("Submissions are no longer accepted as the due date has passed.");
+      return;
+    }
     
     if (formData.content.trim() === "" && formData.attachments.length === 0) {
       setError("Please provide either text content or upload files for your submission.");
@@ -164,6 +170,7 @@ const StudentSubmissionForm = () => {
       };
     }
   };
+  
 
   if (loading) {
     return (

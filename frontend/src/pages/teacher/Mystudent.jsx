@@ -21,26 +21,26 @@ const Students = () => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-
-        // 1. Get the teacher's class IDs
-        const teacherRes = await authAxios.get(`/teachers/${userdata.id}`);
-        const classIds = teacherRes.data.data.class; // Array of class _ids
-        console.log(classIds)
-        // 2. Get all students
-        const response = await authAxios.get(`/students`);
-        const allStudents = response.data.data;
-        console.log(allStudents)
-        // 3. Filter students that belong to the teacher's classes
+  
+        // Get the teacher's timetables
+        const teacherRes = await authAxios.get(`timetables/teacher/${userdata.id}`);
+        const timetables = teacherRes.data.data;
+  
+        // Extract unique class IDs from timetables
+        const classIds = [
+          ...new Set(timetables.map(t => t.class?._id).filter(Boolean))
+        ];
+  
+        // Get all students and filter those in the teacher's classes
+        const studentRes = await authAxios.get(`/students`);
+        const allStudents = studentRes.data.data;
+  
         const filteredStudents = allStudents.filter(student =>
           classIds.includes(student.class._id)
         );
-
+  
         setStudents(filteredStudents);
-
-        // 4. Fetch classes and filter them
-        const classesRes = await authAxios.get('/classes');
-        setClasses(classesRes.data.data.filter(cls => classIds.includes(cls._id)));
-
+        setError(null);
       } catch (err) {
         console.error(err);
         setError('Failed to load students');
@@ -48,9 +48,10 @@ const Students = () => {
         setLoading(false);
       }
     };
-
+  
     fetchStudents();
   }, [currentPage, userdata.id]);
+  
 
   // Reset to first page on search
   useEffect(() => {

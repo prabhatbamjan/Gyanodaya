@@ -238,7 +238,7 @@ exports.verifyResetCode = async (req, res) => {
             resetCode,
             resetCodeExpires: { $gt: Date.now() }
         });
-
+      console.log(email, resetCode)
         if (!user) {
             return res.status(400).json({
                 status: 'error',
@@ -295,6 +295,55 @@ exports.resetPassword = async (req, res) => {
             status: 'success',
             token,
             message: 'Password reset successfully'
+        });
+    } catch (error) {
+        res.status(400).json({
+            status: 'error',
+            message: error.message
+        });
+    }
+};
+
+// Update User Profile
+exports.updateProfile = async (req, res) => {
+    try {
+        const { firstName, lastName, email } = req.body;
+
+        // Check if the email is already taken by another user
+        if (email) {
+            const existingUser = await User.findOne({ 
+                email, 
+                _id: { $ne: req.user.id } 
+            });
+            
+            if (existingUser) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Email is already in use by another account'
+                });
+            }
+        }
+
+        // Update user
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            { firstName, lastName, email },
+            { new: true, runValidators: true }
+        );
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Profile updated successfully',
+            data: {
+                user: {
+                    id: updatedUser._id,
+                    firstName: updatedUser.firstName,
+                    lastName: updatedUser.lastName,
+                    email: updatedUser.email,
+                    role: updatedUser.role,
+                    createdAt: updatedUser.createdAt
+                }
+            }
         });
     } catch (error) {
         res.status(400).json({

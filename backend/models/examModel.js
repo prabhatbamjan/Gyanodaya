@@ -23,8 +23,15 @@ const examSchema = new mongoose.Schema({
   passingMarks: {
     type: Number,
     required: [true, 'Passing marks is required'],
-    min: [0, 'Passing marks cannot be negative']
+    min: [0, 'Passing marks cannot be negative'],
+    validate: {
+      validator: function(value) {
+        return value <= this.totalMarks;
+      },
+      message: 'Passing marks cannot be greater than total marks'
+    }
   },
+
   classSubjects: [
     {
       class: {
@@ -45,7 +52,13 @@ const examSchema = new mongoose.Schema({
   },
   endDate: {
     type: Date,
-    required: [true, 'End date is required']
+    required: [true, 'End date is required'],
+    validate: {
+      validator: function(value) {
+        return value > this.startDate;
+      },
+      message: 'End date must be after start date'
+    }
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -60,6 +73,10 @@ const examSchema = new mongoose.Schema({
     type: String,
     enum: ['Upcoming', 'Ongoing', 'Completed', 'Cancelled'],
     default: 'Upcoming'
+  },
+  resultsPublished: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

@@ -212,7 +212,7 @@ const TeacherResults = () => {
               className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add New Result
+              Add New Result 
             </Link>
           </div>
         </div>
@@ -225,17 +225,22 @@ const TeacherResults = () => {
                   Class
                 </label>
                 <select
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Classes</option>
                   {classes.map((cls) => (
                     <option key={cls._id} value={cls._id}>
-                      {cls.name}
+                      {cls.name} {cls.section && `- ${cls.section}`}
                     </option>
                   ))}
                 </select>
+                {classes.length > 1 && (
+                  <p className="mt-1 text-xs text-blue-600">
+                    You are assigned to {classes.length} classes. Select one to view specific results.
+                  </p>
+                )}
               </div>
               
               <div className="w-full md:w-auto md:flex-1">

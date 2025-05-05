@@ -25,7 +25,7 @@ const TeacherMarkAttendance = () => {
     period: '',
     records: [],
     teacher: userdata.id,
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+    academicYear: `${new Date().getFullYear()}`,
   });
 
   useEffect(() => {
@@ -48,13 +48,16 @@ const TeacherMarkAttendance = () => {
     try {
       const [classesRes, teacherRes] = await Promise.all([
         authAxios.get('classes/'),
-        authAxios.get(`timetables/teacher/class/${userdata.id}`)
+        authAxios.get(`timetables/teacher/classes/${userdata.id}`)
       ]);
 
+
       const allClasses = classesRes.data.data || [];
+      console.log(teacherRes.data)
       const teacherData = teacherRes.data.data || [];
 
       setTeacherTimetables(teacherData);
+      console.log("Teacher timetables:", teacherData);
 
       const classIds = new Set();
       teacherData.forEach(timetable => {
@@ -83,7 +86,7 @@ const TeacherMarkAttendance = () => {
       ...prev,
       subject: '',
       period: '',
-      academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+      academicYear: `${new Date().getFullYear()}`
     }));
   };
 

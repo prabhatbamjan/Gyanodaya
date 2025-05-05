@@ -106,7 +106,7 @@ const TeacherNotifications = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      const response = await authAxios.put(`/notifications/${notificationId}/read`);
+      const response = await authAxios.post(`/notifications/${notificationId}/mark-read`);
       
       if (response.data.success) {
         // Update the notification's read status in the local state

@@ -9,7 +9,8 @@ const {
     getAttendanceByTeacher,
     getAttendanceById,
     createTAttendance,
-    getStudentAttendance
+    getStudentAttendance,
+    getAttendanceRate
 } = require('../controllers/attendanceController');
 
 // Get all attendance records and create new attendance
@@ -23,7 +24,7 @@ router.route('/teacher/:teacherId')
 // Generate attendance report
 router.route('/report')
     .get(generateReport);
-
+router.route('/rate').get(getAttendanceRate);
 // Update and delete attendance record
 router.route('/:id')
     .get(getAttendanceById)
@@ -36,4 +37,6 @@ router.route('/teacher')
 router.route('/student/:studentId')
     .get(getStudentAttendance);
 
+
+ 
 module.exports = router; 

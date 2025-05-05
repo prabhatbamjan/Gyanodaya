@@ -30,7 +30,7 @@ function EditTimetable() {
       location: 'Regular Classroom',
       notes: ''
     })),
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+    academicYear: `${new Date().getFullYear()}`,
     isRecurring: true,
     effectiveFrom: new Date().toISOString().split('T')[0],
     effectiveUntil: '',

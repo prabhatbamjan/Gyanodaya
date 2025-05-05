@@ -10,6 +10,7 @@ exports.getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find()
     .populate('classTeacher', 'firstName lastName')
+    .populate('subjects' , '_id name')
    
     
     res.status(200).json({

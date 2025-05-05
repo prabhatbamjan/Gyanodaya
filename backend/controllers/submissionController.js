@@ -1,18 +1,18 @@
 const Submission = require('../models/submissionModel');
 const Assignment = require('../models/assignmentModel');
 const Student = require('../models/studentModel');
-const Cloudinary = require('../middleware/cloudnery');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { ensureDirectoryExists, processUploadedFile, deleteFile } = require('../utils/fileUtils');
 
-// Configure multer for temporary storage before uploading to Cloudinary
+// Create upload directories if they don't exist
+const uploadDir = './uploads/submissions';
+ensureDirectoryExists(uploadDir);
+
+// Configure multer for file storage
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    const uploadDir = './uploads/temp';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
     cb(null, uploadDir);
   },
   filename: function(req, file, cb) {
@@ -50,28 +50,6 @@ const upload = multer({
 });
 
 exports.uploadSubmissionFiles = upload.array('attachments', 5);
-
-const uploadToCloudinary = async (file) => {
-  try {
-    const result = await Cloudinary.uploader.upload(file.path, {
-      folder: 'submissions',
-      resource_type: 'auto',
-      use_filename: true,
-    });
-    fs.unlinkSync(file.path);
-    return {
-      filename: path.basename(file.originalname),
-      originalName: file.originalname,
-      path: result.secure_url,
-      cloudinaryId: result.public_id,
-      size: result.bytes,
-      mimetype: file.mimetype
-    };
-  } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
-    throw new Error('Failed to upload file to cloud storage');
-  }
-};
 
 // Create a submission
 exports.createSubmission = async (req, res) => {
@@ -114,8 +92,7 @@ exports.createSubmission = async (req, res) => {
     // Process file uploads
     let attachments = [];
     if (req.files && req.files.length > 0) {
-      const uploadPromises = req.files.map(file => uploadToCloudinary(file));
-      attachments = await Promise.all(uploadPromises);
+      attachments = req.files.map(file => processUploadedFile(file));
     }
 
     // Check if submission is late
@@ -164,40 +141,50 @@ exports.updateSubmission = async (req, res, next) => {
     const assignment = await Assignment.findById(submission.assignment);
     if (!assignment) return res.status(404).json({ success: false, message: 'Assignment not found' });
 
-    const newAttachments = req.files ? req.files.map(file => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      path: file.path,
-      size: file.size,
-      mimetype: file.mimetype
-    })) : [];
+    // Process new files
+    let newAttachments = [];
+    if (req.files && req.files.length > 0) {
+      newAttachments = req.files.map(file => processUploadedFile(file));
+    }
 
     let currentAttachments = [...submission.attachments];
 
+    // Handle file removal if specified
     if (req.body.removeAttachments) {
       const toRemove = Array.isArray(req.body.removeAttachments) ? req.body.removeAttachments : [req.body.removeAttachments];
       currentAttachments = currentAttachments.filter(att => {
         if (toRemove.includes(att._id.toString())) {
-          if (fs.existsSync(att.path)) fs.unlinkSync(att.path);
+          deleteFile(att.path);
           return false;
         }
         return true;
       });
     }
 
-    const updated = await Submission.findByIdAndUpdate(
+    // Update submission
+    const updatedSubmission = await Submission.findByIdAndUpdate(
       submissionId,
       {
+        $set: {
         content: req.body.content || submission.content,
         attachments: [...currentAttachments, ...newAttachments],
-        lastUpdatedAt: Date.now()
+          lastUpdatedAt: new Date()
+        }
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
-    res.status(200).json({ success: true, data: updated });
-  } catch (err) {
-    next(err);
+    res.status(200).json({
+      success: true,
+      data: updatedSubmission
+    });
+  } catch (error) {
+    console.error('Error updating submission:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error while updating submission',
+      error: error.message
+    });
   }
 };
 
@@ -360,8 +347,7 @@ exports.submitAssignment = async (req, res) => {
     // Process file uploads
     let attachments = [];
     if (req.files && req.files.length > 0) {
-      const uploadPromises = req.files.map(file => uploadToCloudinary(file));
-      attachments = await Promise.all(uploadPromises);
+      attachments = req.files.map(file => processUploadedFile(file));
     }
 
     // Check if submission is late

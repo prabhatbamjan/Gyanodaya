@@ -14,7 +14,7 @@ function AddClass() {
     fee: '',
     subjects: [],
    
-    academicYear: '', // Added academic year
+    academicYear: new Date().getFullYear(), // Added academic year
   });
 
   const [subjects, setSubjects] = useState([]);
@@ -233,20 +233,16 @@ function AddClass() {
   <label className="block text-sm font-medium text-gray-700 mb-1">
     Academic Year <span className="text-red-500">*</span>
   </label>
-  <select
+  <input
+  type="number"
   name="academicYear"
   value={formData.academicYear}
   onChange={handleInputChange}
   className="w-full border rounded px-3 py-2"
   required
->
-  <option value="">Select Year</option>
-  {Array.from({ length: 10 }, (_, i) => 2024 + i).map((year) => (
-    <option key={year} value={year}>
-      {year}
-    </option>
-  ))}
-</select>
+  min={new Date().getFullYear()}
+  max={new Date().getFullYear()}
+  />
 </div>
 
             <div>

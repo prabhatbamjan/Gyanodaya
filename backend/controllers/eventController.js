@@ -1,6 +1,30 @@
 const Event = require('../models/eventModel');
 const Class = require('../models/classModel');
 
+/**
+ * Updates an event's status based on its start and end dates
+ * @param {Object} event - The event object to update
+ * @returns {boolean} - True if status was updated, false otherwise
+ */
+const updateEventStatusByDate = (event) => {
+  if (event.status === 'cancelled') return false; // Don't update cancelled events
+  
+  const now = new Date();
+  const startDate = new Date(event.startDate);
+  const endDate = new Date(event.endDate);
+  let statusUpdated = false;
+  
+  if (event.status === 'upcoming' && startDate <= now && endDate >= now) {
+    event.status = 'ongoing';
+    statusUpdated = true;
+  } else if ((event.status === 'upcoming' || event.status === 'ongoing') && endDate < now) {
+    event.status = 'completed';
+    statusUpdated = true;
+  }
+  
+  return statusUpdated;
+};
+
 // Get all events
 exports.getAllEvents = async (req, res) => {
     try {
@@ -8,6 +32,19 @@ exports.getAllEvents = async (req, res) => {
             .populate('classes', 'name grade section')
             .populate('createdBy', 'firstName lastName')
             .sort({ startDate: 1 });
+
+        // Update statuses based on current date
+        let hasStatusUpdates = false;
+        for (const event of events) {
+            if (updateEventStatusByDate(event)) {
+                hasStatusUpdates = true;
+                await event.save();
+            }
+        }
+        
+        if (hasStatusUpdates) {
+            console.log('Updated event statuses on-the-fly during getAllEvents');
+        }
 
         res.status(200).json({
             success: true,
@@ -42,6 +79,19 @@ exports.getEventsByClass = async (req, res) => {
             .populate('classes', 'name grade section')
             .populate('createdBy', 'firstName lastName')
             .sort({ startDate: 1 });
+            
+        // Update statuses based on current date
+        let hasStatusUpdates = false;
+        for (const event of events) {
+            if (updateEventStatusByDate(event)) {
+                hasStatusUpdates = true;
+                await event.save();
+            }
+        }
+        
+        if (hasStatusUpdates) {
+            console.log('Updated event statuses on-the-fly during getEventsByClass');
+        }
 
         res.status(200).json({
             success: true,
@@ -197,6 +247,12 @@ exports.getEventById = async (req, res) => {
             });
         }
 
+        // Update status based on current date if needed
+        if (updateEventStatusByDate(event)) {
+            await event.save();
+            console.log(`Updated event status on-the-fly: ${event._id}`);
+        }
+
         res.status(200).json({
             success: true,
             data: event
@@ -210,3 +266,8 @@ exports.getEventById = async (req, res) => {
         });
     }
 }; 
+
+
+   
+
+

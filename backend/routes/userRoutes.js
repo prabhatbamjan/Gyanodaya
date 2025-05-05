@@ -14,6 +14,7 @@ router.post('/resetPassword', userController.resetPassword);
 router.use(authController.protect); // All routes after this middleware will be protected
 
 router.get('/profile', userController.getProfile);
+router.put('/profile', userController.updateProfile);
 router.patch('/update-password', userController.updatePassword);
 
 module.exports = router;

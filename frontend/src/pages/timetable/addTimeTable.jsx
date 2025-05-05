@@ -25,7 +25,7 @@ function AddTimetable() {
       subject: '',
       teacher: ''
     })),
-    academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+    academicYear: `${new Date().getFullYear()}`
   });
 
   // Helper function to calculate period times
@@ -107,13 +107,14 @@ function AddTimetable() {
         }
       }
     }
-    if (field === 'subject') {
-      const selectedClass = classes.find(c => c._id === formData.class);
-      if (selectedClass && !selectedClass.subjects.includes(value)) {
-        setError('Selected subject is not available for this class.');
-        return;
-      }
+   if (field === 'subject') {
+    const selectedClass = classes.find(c => c._id === formData.class);
+    if (selectedClass && !selectedClass.subjects.map(s => (typeof s === 'string' ? s : s._id)).includes(value)) {
+      setError(`Selected ${value} subject is not available for this class.`);
+      return;
     }
+  }
+    
     setFormData(prev => ({
       ...prev,
       periods: updatedPeriods

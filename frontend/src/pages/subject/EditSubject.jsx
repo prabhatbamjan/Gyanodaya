@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import authAxios from '../../utils/auth';
+import Layout from "../../components/layoutes/adminlayout";
 import {
   ChevronLeft,
   X,
@@ -147,6 +148,7 @@ const EditSubject = () => {
   }
 
   return (
+    <Layout>
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header section */}
@@ -317,6 +319,7 @@ const EditSubject = () => {
         </div>
       )}
     </div>
+    </Layout>
   );
 };
 

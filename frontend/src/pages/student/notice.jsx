@@ -79,7 +79,8 @@ const StudentNotifications = () => {
 
   const markAsRead = async (notificationId) => {
     try {
-      const response = await authAxios.put(`/notifications/${notificationId}/mark-read`);   if (response.data.success) {
+      const response = await authAxios.post(`/notifications/${notificationId}/mark-read`);
+      if (response.data.success) {
         setNotifications(notifications.map(n =>
           n._id === notificationId ? { ...n, isRead: true } : n
         ));

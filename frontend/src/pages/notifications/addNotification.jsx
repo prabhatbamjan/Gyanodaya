@@ -35,14 +35,13 @@ const AddNotification = () => {
       try {
         const res = await authAxios.get('/teachers');
         const res2 = await authAxios.get('/students'); 
-        const res3 = await authAxios.get('/parents'); 
+       
 
-        console.log('Parents response:', res3.data);
 
         setteachers(Array.isArray(res.data.data) ? res.data.data : []);
         setstudents(Array.isArray(res2.data.data) ? res2.data.data : []);
-        setparents(Array.isArray(res3.data) ? res3.data: []); // Defensive
-       
+        const extractedParents = res2.data.data.map(student => student.parent);
+        setparents(Array.isArray(extractedParents) ? extractedParents : []);
       } catch (err) {
         console.error(err);
         toast.error('Failed to fetch users');
@@ -76,6 +75,56 @@ const AddNotification = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+  const handleSelectAllTeachers = () => {
+    const teacherIds = teachers.map(teacher => teacher._id);
+    const allSelected = teacherIds.every(id => 
+      formData.recipients.users.includes(id)
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      recipients: {
+        ...prev.recipients,
+        users: allSelected
+          ? prev.recipients.users.filter(id => !teacherIds.includes(id))
+          : [...new Set([...prev.recipients.users, ...teacherIds])]
+      }
+    }));
+  };
+
+  const handleSelectAllStudents = () => {
+    const studentIds = students.map(student => student._id);
+    const allSelected = studentIds.every(id => 
+      formData.recipients.users.includes(id)
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      recipients: {
+        ...prev.recipients,
+        users: allSelected
+          ? prev.recipients.users.filter(id => !studentIds.includes(id))
+          : [...new Set([...prev.recipients.users, ...studentIds])]
+      }
+    }));
+  };
+
+  const handleSelectAllParents = () => {
+    const parentIds = parents.filter(p => p).map(parent => parent._id);
+    const allSelected = parentIds.every(id => 
+      formData.recipients.users.includes(id)
+    );
+
+    setFormData(prev => ({
+      ...prev,
+      recipients: {
+        ...prev.recipients,
+        users: allSelected
+          ? prev.recipients.users.filter(id => !parentIds.includes(id))
+          : [...new Set([...prev.recipients.users, ...parentIds])]
+      }
+    }));
   };
 
   return (
@@ -124,104 +173,90 @@ const AddNotification = () => {
             </select>
           </div>
 
+         
+
           <div>
-            <label className="block font-medium mb-1">Recipient Roles</label>
-            <div className="flex flex-wrap gap-2">
-              {roles.map(role => (
-                <label key={role} className="flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={formData.recipients.roles.includes(role)}
-                    onChange={(e) => {
-                      const updatedRoles = e.target.checked
-                        ? [...formData.recipients.roles, role]
-                        : formData.recipients.roles.filter(r => r !== role);
-                      setFormData({ ...formData, recipients: { ...formData.recipients, roles: updatedRoles } });
-                    }}
-                  />
-                  {role}
-                </label>
-              ))}
+          <label className="block font-medium mb-1">Recipient Users</label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Teachers Column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={teachers.every(teacher => 
+                    formData.recipients.users.includes(teacher._id)
+                  )}
+                  onChange={handleSelectAllTeachers}
+                />
+                <span className="font-medium">Select All Teachers</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {teachers.map(teacher => (
+                  <label key={teacher._id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.recipients.users.includes(teacher._id)}
+                      onChange={(e) => handleUserCheck(teacher._id, e.target.checked)}
+                    />
+                    <span>{teacher.name || `${teacher.firstName} ${teacher.lastName}`}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="block font-medium mb-1">Recipient Users</label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block font-medium mb-1">Select Teachers</label>
-                <select
-                  multiple
-                  className="w-full border rounded px-3 py-2 h-32"
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      recipients: {
-                        ...prev.recipients,
-                        users: [...new Set([...prev.recipients.users, ...selected])]
-                      }
-                    }));
-                  }}
-                >
-                  {(teachers || []).map(teacher => (
-                    <option key={teacher._id} value={teacher._id}>
-                      {teacher.name || `${teacher.firstName} ${teacher.lastName}`}
-                    </option>
-                  ))}
-                </select>
+            {/* Students Column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={students.every(student => 
+                    formData.recipients.users.includes(student._id)
+                  )}
+                  onChange={handleSelectAllStudents}
+                />
+                <span className="font-medium">Select All Students</span>
               </div>
-
-              <div>
-                <label className="block font-medium mb-1">Select Students</label>
-                <select
-                  multiple
-                  className="w-full border rounded px-3 py-2 h-32"
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      recipients: {
-                        ...prev.recipients,
-                        users: [...new Set([...prev.recipients.users, ...selected])]
-                      }
-                    }));
-                  }}
-                >
-                  {(students || []).map(student => (
-                    <option key={student._id} value={student._id}>
-                      {student.name || `${student.firstName} ${student.lastName}`}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex flex-col gap-2">
+                {students.map(student => (
+                  <label key={student._id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.recipients.users.includes(student._id)}
+                      onChange={(e) => handleUserCheck(student._id, e.target.checked)}
+                    />
+                    <span>{student.name || `${student.firstName} ${student.lastName}`}</span>
+                  </label>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <label className="block font-medium mb-1">Select Parents</label>
-                <select
-                  multiple
-                  className="w-full border rounded px-3 py-2 h-32"
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions, opt => opt.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      recipients: {
-                        ...prev.recipients,
-                        users: [...new Set([...prev.recipients.users, ...selected])]
-                      }
-                    }));
-                  }}
-                >
-                {(parents || []).map(parent => (
-  <option key={parent._id} value={parent._id}>
-    {`${parent.firstName || ''} ${parent.lastName || ''}`.trim()}
-  </option>
-))}
-
-                </select>
+            {/* Parents Column */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={parents.filter(p => p).every(parent => 
+                    formData.recipients.users.includes(parent._id)
+                  )}
+                  onChange={handleSelectAllParents}
+                />
+                <span className="font-medium">Select All Parents</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {parents.filter(parent => parent).map(parent => (
+                  <label key={parent._id} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.recipients.users.includes(parent._id)}
+                      onChange={(e) => handleUserCheck(parent._id, e.target.checked)}
+                    />
+                    <span>{`${parent.firstName || ''} ${parent.lastName || ''}`.trim()}</span>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
+        </div>
 
           <div className="flex items-center gap-2">
             <input

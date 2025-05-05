@@ -75,6 +75,7 @@ const Submissions = () => {
         authAxios.get("/classes/teacher"),
         authAxios.get("/subjects/teacher")
       ]);
+      console.log(classesRes.data.data)
 
       setClasses(classesRes.data.data || []);
       setSubjects(subjectsRes.data.data || []);

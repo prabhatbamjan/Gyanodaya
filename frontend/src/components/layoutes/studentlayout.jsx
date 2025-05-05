@@ -19,16 +19,15 @@ import {
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { logout, getUserData } from '../../utils/auth';
+import authAxios from '../../utils/auth';
 
 function StudentLayout({ children }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'New assignment posted in Mathematics', time: '10 min ago' },
-    { id: 2, message: 'Upcoming test reminder: Science', time: '1 hour ago' },
-    { id: 3, message: 'School event tomorrow', time: '2 hours ago' },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,6 +35,76 @@ function StudentLayout({ children }) {
  
   const userMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+
+  // Fetch real-time notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const response = await authAxios.get('/notifications/my');
+        
+        if (response.data.success) {
+          // Get only the 5 most recent notifications for the dropdown
+          const recentNotifications = response.data.data.slice(0, 5);
+          setNotifications(recentNotifications);
+          setUnreadCount(response.data.unread);
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchNotifications();
+    
+    // Fetch notifications every minute for real-time updates
+    const interval = setInterval(fetchNotifications, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Mark notification as read
+  const markAsRead = async (notificationId) => {
+    try {
+      const response = await authAxios.post(`/notifications/${notificationId}/mark-read`);
+      
+      if (response.data.success) {
+        // Update notification in the list
+        setNotifications(notifications.map(n => 
+          n._id === notificationId ? { ...n, isRead: true } : n
+        ));
+        
+        // Update unread count
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+    }
+  };
+
+  // Format the time as relative time (e.g., "2 hours ago")
+  const formatRelativeTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+    
+    if (diffSec < 60) {
+      return 'Just now';
+    } else if (diffMin < 60) {
+      return `${diffMin} min ago`;
+    } else if (diffHour < 24) {
+      return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+    } else if (diffDay < 30) {
+      return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -103,9 +172,9 @@ function StudentLayout({ children }) {
                 onClick={toggleNotifications}
               >
                 <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs">
-                    {notifications.length}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -117,12 +186,35 @@ function StudentLayout({ children }) {
                     <h3 className="text-sm font-semibold text-gray-700">Notifications</h3>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {notifications.map(notification => (
-                      <div key={notification.id} className="px-4 py-3 hover:bg-gray-100 border-b border-gray-100">
-                        <p className="text-sm text-gray-700">{notification.message}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                    {loading ? (
+                      <div className="px-4 py-3 text-center text-sm text-gray-500">
+                        Loading...
                       </div>
-                    ))}
+                    ) : notifications.length === 0 ? (
+                      <div className="px-4 py-3 text-center text-sm text-gray-500">
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map(notification => (
+                        <div 
+                          key={notification._id} 
+                          className={`px-4 py-3 hover:bg-gray-100 border-b border-gray-100 ${
+                            !notification.isRead ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <p className="text-sm text-gray-700">{notification.title}</p>
+                          <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(notification.createdAt)}</p>
+                          {!notification.isRead && (
+                            <button
+                              onClick={() => markAsRead(notification._id)}
+                              className="text-xs text-blue-600 mt-1 hover:underline"
+                            >
+                              Mark as read
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                   <div className="px-4 py-2 text-center">
                     <Link to="/student/notice" className="text-sm text-blue-600 hover:text-blue-800" onClick={() => setIsNotificationsOpen(false)}>
@@ -257,13 +349,26 @@ function StudentLayout({ children }) {
                 <Link 
                   to="/student/assignments" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
-                    isActive('/student-assignments') 
+                    isActive('/student/assignments') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
                       : 'hover:bg-gray-100'
                   }`}
                 >
-                  <FileText className={`h-5 w-5 mr-3 ${isActive('/student-assignments') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/student/assignments') ? 'text-blue-600' : 'text-gray-500'}`} />
                   <span>Assignments</span>
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/student/results" 
+                  className={`flex items-center px-6 py-3 text-gray-700 ${
+                    isActive('/student/results') 
+                      ? 'bg-blue-50 border-r-4 border-blue-500' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <Award className={`h-5 w-5 mr-3 ${isActive('/student/results') ? 'text-blue-600' : 'text-gray-500'}`} />
+                  <span>My Results</span>
                 </Link>
               </li>
               <li>
@@ -295,7 +400,7 @@ function StudentLayout({ children }) {
               </li>
               <li>
                 <Link 
-                  to="/student-grades" 
+                  to="/student/results" 
                   className={`flex items-center px-6 py-3 text-gray-700 ${
                     isActive('/student-grades') 
                       ? 'bg-blue-50 border-r-4 border-blue-500' 
@@ -404,14 +509,28 @@ function StudentLayout({ children }) {
                     <Link 
                       to="/student/assignments" 
                       className={`flex items-center px-6 py-3 text-gray-700 ${
-                        isActive('/student-assignments') 
+                        isActive('/student/assignments') 
                           ? 'bg-blue-50 border-r-4 border-blue-500' 
                           : 'hover:bg-gray-100'
                       }`}
                       onClick={toggleMobileMenu}
                     >
-                      <FileText className={`h-5 w-5 mr-3 ${isActive('/student-assignments') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <ClipboardList className={`h-5 w-5 mr-3 ${isActive('/student/assignments') ? 'text-blue-600' : 'text-gray-500'}`} />
                       <span>Assignments</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/student/results" 
+                      className={`flex items-center px-6 py-3 text-gray-700 ${
+                        isActive('/student/results') 
+                          ? 'bg-blue-50 border-r-4 border-blue-500' 
+                          : 'hover:bg-gray-100'
+                      }`}
+                      onClick={toggleMobileMenu}
+                    >
+                      <Award className={`h-5 w-5 mr-3 ${isActive('/student/results') ? 'text-blue-600' : 'text-gray-500'}`} />
+                      <span>My Results</span>
                     </Link>
                   </li>
                   <li>

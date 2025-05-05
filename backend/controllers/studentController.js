@@ -319,7 +319,7 @@ exports.getAllStudents = async (req, res) => {
   try {
       const students = await Student.find()
           .populate('class', 'name section') // optional
-          .populate('parent', 'firstName lastName email phone'); // optional
+          .populate('parent', '_id firstName lastName email phone'); // optional
 
       res.status(200).json({
           status: 'success',

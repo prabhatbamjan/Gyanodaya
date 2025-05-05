@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const path = require('path');
 const users = require('./routes/userRoutes');
 const subjects = require('./routes/subjectRoutes');
 const teachers = require('./routes/teacherRoutes');
@@ -13,7 +14,7 @@ const notifications = require('./routes/notificationRoutes');
 const attendance = require('./routes/attendanceRoutes');
 const events = require('./routes/eventRoutes');
 const product =require('./routes/productRoutes')
-// const exams = require('./routes/examRoutes');
+const exams = require('./routes/examRoutes');
 const assignments = require('./routes/assignmentRoutes');
 
 
@@ -21,6 +22,7 @@ const fees = require('./routes/feeRoutes');
 const salaries = require('./routes/salaryRoutes');
 
 const orders = require('./routes/orderRoutes');
+const { scheduleStatusUpdates } = require('./utils/cronJobs');
 // const submissions = require('./routes/submissionRoutes');
 // const academicCalendar = require('./routes/academicCalendarRoutes');
 
@@ -40,11 +42,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Database connection with better error handling
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1); // Exit process with failure
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('MongoDB Connected');
+    // Schedule and run the status update jobs
+    scheduleStatusUpdates();
+  })
+  .catch(err => {
+    console.error('MongoDB Connection Error:', err);
+    process.exit(1);
   });
 
 // Set mongoose debug mode for development environment
@@ -63,7 +69,7 @@ app.use('/api/notifications', notifications);
 app.use('/api/attendance', attendance);
 app.use('/api/events', events);
 app.use('/api/products', product);
-// app.use('/api/exams', exams);
+app.use('/api/exams', exams);
 app.use('/api/assignments', assignments);
 
 
@@ -72,7 +78,7 @@ app.use('/api/salaries', salaries);
 app.use('/api/orders', orders);
 
 // Serve uploaded files
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // app.use('/api/submissions', submissions);
 // app.use('/api/academic-calendar', academicCalendar);

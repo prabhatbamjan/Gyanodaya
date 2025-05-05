@@ -1,98 +1,34 @@
 import React, { useState, useEffect } from "react";
-import {useNavigate  } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  BookOpen,
-  Calendar,
-  GraduationCap,
-  LayoutDashboard,
-  LogOut,
-  MessageSquare,
-  User,
   Bell,
+  Clock,
   FileText,
   Menu,
-  CreditCard,
-  BarChart,
+  User,
+  BookOpen,
+  Calendar,
+  DollarSign,
   CheckCircle,
-  Clock,
-  UserCheck,
-  AlertCircle,
-  FileSpreadsheet,
-  ChevronRight,
-  Users,
+  AlertCircle
 } from "lucide-react";
-import { logout, getUserData } from '../utils/auth';
+import Layout from "../components/layoutes/parentlayout";
+import { getUserData, logout } from "../utils/auth";
+import authAxios from "../utils/auth";
+
 const ParentDashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeChild, setActiveChild] = useState(0);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "John has a test tomorrow", time: "10 min ago" },
-    { id: 2, text: "School fees due next week", time: "2 hours ago" },
-    { id: 3, text: "Parent-teacher meeting scheduled", time: "Yesterday" },
-  ]);
-
-  const children = [
-    { 
-      id: 1, 
-      name: "John Smith", 
-      grade: "10th Grade", 
-      class: "10-A",
-      attendance: "92%",
-      nextTest: { subject: "Mathematics", date: "Tomorrow" },
-      recentGrades: [
-        { subject: "Mathematics", grade: "A", score: "92/100" },
-        { subject: "Science", grade: "B+", score: "87/100" },
-        { subject: "English", grade: "A-", score: "89/100" },
-        { subject: "History", grade: "B", score: "83/100" }
-      ],
-      upcomingAssignments: [
-        { id: 1, subject: "Mathematics", title: "Chapter 5 Problems", due: "Tomorrow" },
-        { id: 2, subject: "Science", title: "Lab Report", due: "Friday" }
-      ],
-      attendance: {
-        present: 45,
-        absent: 2,
-        late: 3,
-        percentage: 92
-      }
-    },
-    { 
-      id: 2, 
-      name: "Emma Smith", 
-      grade: "7th Grade", 
-      class: "7-C",
-      attendance: "95%",
-      nextTest: { subject: "Science", date: "Friday" },
-      recentGrades: [
-        { subject: "Mathematics", grade: "A+", score: "98/100" },
-        { subject: "Science", grade: "A", score: "94/100" },
-        { subject: "English", grade: "A", score: "92/100" },
-        { subject: "Art", grade: "A+", score: "100/100" }
-      ],
-      upcomingAssignments: [
-        { id: 1, subject: "Science", title: "Ecosystem Project", due: "Next Monday" },
-        { id: 2, subject: "English", title: "Book Report", due: "Friday" }
-      ],
-      attendance: {
-        present: 47,
-        absent: 1,
-        late: 2,
-        percentage: 95
-      }
-    }
-  ];
-
-  const fees = [
-    { id: 1, description: "Tuition Fee", amount: "$2,500", dueDate: "15 Oct 2023", status: "Paid" },
-    { id: 2, description: "School Trip", amount: "$150", dueDate: "30 Oct 2023", status: "Pending" },
-    { id: 3, description: "Lab Materials", amount: "$75", dueDate: "5 Nov 2023", status: "Pending" }
-  ];
-
-  const announcements = [
-    { id: 1, title: "Annual School Function", date: "Posted 2 days ago" },
-    { id: 2, title: "PTA Meeting Schedule", date: "Posted 1 week ago" }
-  ];
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [children, setChildren] = useState([]);
+  const [selectedChild, setSelectedChild] = useState(null);
+  const [childCourses, setChildCourses] = useState([]);
+  const [childAssignments, setChildAssignments] = useState([]);
+  const [feeInfo, setFeeInfo] = useState(null);
+  
+  const navigate = useNavigate();
+  const userData = getUserData();
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -104,344 +40,388 @@ const ParentDashboard = () => {
 
     checkIfMobile();
     window.addEventListener("resize", checkIfMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkIfMobile);
-    };
+    return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
- const handleLogout = () => {
-      logout();
-      navigate('/login');
+  // Fetch parent's children data
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        setLoading(true);
+        // This would be replaced with a real API call to get the parent's children
+        // const response = await authAxios.get('/parent/children');
+        // setChildren(response.data);
+        
+        // Dummy data for now
+        const dummyChildren = [
+          { id: 1, name: "Alex Johnson", grade: "9th Grade", class: "Class A", image: null },
+          { id: 2, name: "Sam Johnson", grade: "6th Grade", class: "Class B", image: null }
+        ];
+        
+        setChildren(dummyChildren);
+        
+        if (dummyChildren.length > 0) {
+          setSelectedChild(dummyChildren[0]);
+          
+          // Get the selected child's data
+          fetchChildData(dummyChildren[0].id);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching children:", err);
+        setError("Failed to load your children's information");
+        setLoading(false);
+      }
     };
-  const activeChildData = children[activeChild];
+    
+    fetchChildren();
+  }, []);
+
+  // Fetch selected child's data
+  const fetchChildData = async (childId) => {
+    try {
+      setLoading(true);
+      
+      // These would be real API calls in a production environment
+      // const coursesResponse = await authAxios.get(`/parent/children/${childId}/courses`);
+      // const assignmentsResponse = await authAxios.get(`/parent/children/${childId}/assignments`);
+      // const feeResponse = await authAxios.get(`/parent/children/${childId}/fees`);
+      
+      // Dummy data for now
+      const dummyCourses = [
+        { id: 1, name: "Mathematics", progress: 75, teacher: "Ms. Johnson", nextClass: "Tomorrow, 9:00 AM", grade: "B+" },
+        { id: 2, name: "Science", progress: 65, teacher: "Mr. Smith", nextClass: "Today, 2:00 PM", grade: "A-" },
+        { id: 3, name: "English", progress: 90, teacher: "Mrs. Davis", nextClass: "Wednesday, 11:00 AM", grade: "A" },
+        { id: 4, name: "History", progress: 50, teacher: "Mr. Wilson", nextClass: "Friday, 1:00 PM", grade: "C+" },
+      ];
+      
+      const dummyAssignments = [
+        { id: 1, title: "Math Problems Set 12", course: "Mathematics", due: "Tomorrow", status: "Pending" },
+        { id: 2, title: "Science Lab Report", course: "Science", due: "Friday", status: "Pending" },
+        { id: 3, title: "Essay on Shakespeare", course: "English", due: "Next Monday", status: "Pending" },
+        { id: 4, title: "History Timeline Project", course: "History", due: "Last Friday", status: "Submitted" },
+      ];
+      
+      const dummyFeeInfo = {
+        tuitionFee: 5000,
+        paidAmount: 3500,
+        dueAmount: 1500,
+        nextDueDate: "November 15, 2023",
+        recentPayments: [
+          { id: 1, amount: 1500, date: "October 15, 2023", method: "Credit Card", status: "Completed" },
+          { id: 2, amount: 2000, date: "September 15, 2023", method: "Bank Transfer", status: "Completed" },
+        ]
+      };
+      
+      setChildCourses(dummyCourses);
+      setChildAssignments(dummyAssignments);
+      setFeeInfo(dummyFeeInfo);
+      setLoading(false);
+    } catch (err) {
+      console.error(`Error fetching data for child ${childId}:`, err);
+      setError("Failed to load your child's information");
+      setLoading(false);
+    }
+  };
+
+  const handleChildSelect = (child) => {
+    setSelectedChild(child);
+    fetchChildData(child.id);
+  };
+
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const announcements = [
+    { id: 1, title: "School Holiday Next Week", date: "Posted 3 days ago" },
+    { id: 2, title: "Annual Sports Day Coming Up", date: "Posted 1 week ago" },
+    { id: 3, title: "Parent-Teacher Meeting", date: "Posted 2 days ago" },
+  ];
+
+  const renderChildAvatar = (child) => {
+    if (child.image) {
+      return <img src={child.image} alt={child.name} className="h-full w-full rounded-full object-cover" />;
+    }
+    
+    return (
+      <div className="h-full w-full rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold">
+        {child.name.split(' ').map(part => part[0]).join('')}
+      </div>
+    );
+  };
 
   return (
+    <Layout>
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside
-        className={`${sidebarOpen ? "w-64" : "w-0 -ml-64"} md:ml-0 bg-white border-r border-gray-200 transition-all duration-300 ease-in-out fixed md:relative z-30 h-screen overflow-y-auto`}
-      >
-        <div className="flex items-center gap-2 p-4 border-b border-gray-200">
-          <Users className="h-6 w-6 text-purple-600" />
-          <div className="font-semibold text-lg text-purple-600">Parent Portal</div>
-        </div>
-
-        <div className="py-4">
-          <div className="px-4 mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">My Children</h3>
-            <ul className="space-y-1">
-              {children.map((child, index) => (
-                <li key={child.id}>
+        <div className="flex-1">
+          {/* Main Content */}
+          <main className="p-4 md:p-6">
+            {/* Welcome Banner */}
+            <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-lg p-4 md:p-6 text-white">
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome {userData?.firstName} {userData?.lastName}</h2>
+              <p className="opacity-90 mb-4">
+                Track your {children.length > 1 ? "children's" : "child's"} academic progress and stay connected with their education.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  onClick={() => navigate('/parent/fee-payment')}
+                  className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Pay Fees
+                </button>
                   <button 
-                    onClick={() => setActiveChild(index)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md ${
-                      activeChild === index 
-                        ? "bg-purple-50 text-purple-700" 
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    <User className="h-4 w-4" />
-                    <div className="flex flex-col items-start">
-                      <span>{child.name}</span>
-                      <span className="text-xs text-gray-500">{child.grade}</span>
-                    </div>
+                  onClick={() => navigate('/parent/academic-records')}
+                  className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  Academic Records
+                </button>
+                <Link to="/parent/messages">
+                  <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium border border-blue-400 hover:bg-blue-700 transition-colors">
+                    Message Teachers
                   </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="px-4 mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Monitoring</h3>
-            <ul className="space-y-1">
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md bg-purple-50 text-purple-700">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <BarChart className="h-4 w-4" />
-                  <span>Academic Progress</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <Clock className="h-4 w-4" />
-                  <span>Attendance</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <BookOpen className="h-4 w-4" />
-                  <span>Assignments</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div className="px-4 mb-4">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">School</h3>
-            <ul className="space-y-1">
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <Calendar className="h-4 w-4" />
-                  <span>Calendar</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Messages</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-                  <CreditCard className="h-4 w-4" />
-                  <span>Payments</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-200 p-4 mt-auto">
-          <div className="flex items-center gap-2 px-2 py-2 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-100">
-            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 text-xs font-medium">
-              PS
+                </Link>
             </div>
-            <div className="flex flex-col items-start">
-              <span className="font-medium">Parent Account</span>
-              <span className="text-xs text-gray-500">parent@example.com</span>
             </div>
            
-          </div>
-           <button
-                      onClick={handleLogout}
-                      className="flex w-full items-center mt-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            {/* Child Selector (only if multiple children) */}
+            {children.length > 1 && (
+              <div className="mb-6 bg-white rounded-lg shadow border border-gray-200 p-4">
+                <h3 className="font-medium text-gray-800 mb-3">Select Child</h3>
+                <div className="flex overflow-x-auto gap-4 pb-2">
+                  {children.map(child => (
+                    <div 
+                      key={child.id}
+                      onClick={() => handleChildSelect(child)}
+                      className={`flex-shrink-0 flex flex-col items-center cursor-pointer p-3 rounded-lg ${
+                        selectedChild?.id === child.id ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                      }`}
                     >
-                      <LogOut className="h-4 w-4 mr-3 text-gray-500" />
-                      <span>Log out</span>
-                    </button>
+                      <div className="h-16 w-16 rounded-full overflow-hidden mb-2">
+                        {renderChildAvatar(child)}
         </div>
-      </aside>
-
-      <div className="flex-1">
-        <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sticky top-0 z-20">
-          <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="ml-4 flex-1 flex justify-between items-center">
-            <h1 className="text-xl font-semibold text-purple-700">Parent Dashboard</h1>
-
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                    {notifications.length}
-                  </span>
-                </button>
+                      <p className="text-sm font-medium text-center">{child.name}</p>
+                      <p className="text-xs text-gray-500">{child.grade}</p>
               </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="p-4 md:p-6">
-          {/* Child Info Banner */}
-          <div className="mb-6 bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-4 md:p-6 bg-gradient-to-r from-purple-500 to-purple-700 text-white">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold">{activeChildData.name}</h2>
-                  <p className="text-sm md:text-base opacity-90">
-                    {activeChildData.grade} • Class {activeChildData.class}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <div className="bg-white bg-opacity-20 rounded-lg px-3 py-2">
-                    <p className="text-xs opacity-90">Attendance</p>
-                    <p className="font-bold">{activeChildData.attendance.percentage}%</p>
-                  </div>
-                  <div className="bg-white bg-opacity-20 rounded-lg px-3 py-2">
-                    <p className="text-xs opacity-90">Next Test</p>
-                    <p className="font-bold">{activeChildData.nextTest.subject}</p>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-            <div className="p-4 border-t border-gray-200">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <button className="flex flex-col items-center justify-center p-2 text-center">
-                  <BarChart className="h-5 w-5 text-purple-600 mb-1" />
-                  <span className="text-xs font-medium text-gray-700">Academic Progress</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-2 text-center">
-                  <FileText className="h-5 w-5 text-amber-600 mb-1" />
-                  <span className="text-xs font-medium text-gray-700">Assignments</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-2 text-center">
-                  <UserCheck className="h-5 w-5 text-green-600 mb-1" />
-                  <span className="text-xs font-medium text-gray-700">Attendance</span>
-                </button>
-                <button className="flex flex-col items-center justify-center p-2 text-center">
-                  <MessageSquare className="h-5 w-5 text-blue-600 mb-1" />
-                  <span className="text-xs font-medium text-gray-700">Contact Teachers</span>
-                </button>
-              </div>
-            </div>
-          </div>
+            )}
 
+            {loading ? (
+              <div className="flex justify-center items-center p-12">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+            </div>
+            ) : error ? (
+              <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6">
+                <p className="flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  {error}
+                </p>
+              </div>
+            ) : selectedChild && (
+              <>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            {/* Recent Grades */}
+                  {/* Child's Courses */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">Recent Grades</h3>
-                  <button className="text-sm text-purple-600 hover:text-purple-800">View All</button>
+                        <h3 className="font-medium text-gray-800">{selectedChild.name}'s Courses</h3>
+                        <button 
+                          onClick={() => navigate(`/parent/courses/${selectedChild.id}`)}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          View All
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {childCourses.map((course) => (
+                          <div key={course.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-gray-800">{course.name}</h4>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{course.teacher}</span>
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Grade: {course.grade}</span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${course.progress}%` }}
+                              ></div>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {activeChildData.recentGrades.map((grade, index) => (
-                        <tr key={index}>
-                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-800">{grade.subject}</td>
-                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{grade.score}</td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              grade.grade.startsWith('A') ? 'bg-green-100 text-green-800' :
-                              grade.grade.startsWith('B') ? 'bg-blue-100 text-blue-800' :
-                              grade.grade.startsWith('C') ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {grade.grade}
+                            <div className="flex justify-between text-xs text-gray-500">
+                              <span>{course.progress}% Complete</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Next: {course.nextClass}
                             </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
+                        ))}
+                </div>
+                    </div>
+                  </div>
 
-              {/* Attendance Overview */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">Attendance Overview</h3>
-                  <button className="text-sm text-purple-600 hover:text-purple-800">Full Report</button>
+                  <div>
+                    {/* Fee Information */}
+                    <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mb-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-medium text-gray-800">Fee Information</h3>
+                        <button 
+                          onClick={() => navigate('/parent/fee-payment')}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          Pay Now
+                        </button>
+                      </div>
+                      {feeInfo && (
+                        <div>
+                          <div className="mb-4">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-600">Total Tuition</span>
+                              <span className="text-sm font-medium">${feeInfo.tuitionFee}</span>
+                    </div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-600">Amount Paid</span>
+                              <span className="text-sm font-medium text-green-600">${feeInfo.paidAmount}</span>
+                  </div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm text-gray-600">Balance Due</span>
+                              <span className="text-sm font-medium text-amber-600">${feeInfo.dueAmount}</span>
+                    </div>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-gray-600">Next Due Date</span>
+                              <span className="text-sm font-medium">{feeInfo.nextDueDate}</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex-1 min-w-[140px] p-3 bg-green-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-gray-500">Present</span>
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-800">{activeChildData.attendance.present}</p>
-                    <p className="text-xs text-gray-500">Days</p>
-                  </div>
-                  <div className="flex-1 min-w-[140px] p-3 bg-red-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-gray-500">Absent</span>
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-800">{activeChildData.attendance.absent}</p>
-                    <p className="text-xs text-gray-500">Days</p>
-                  </div>
-                  <div className="flex-1 min-w-[140px] p-3 bg-amber-50 rounded-lg">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-xs text-gray-500">Late</span>
-                      <Clock className="h-4 w-4 text-amber-600" />
-                    </div>
-                    <p className="text-2xl font-bold text-gray-800">{activeChildData.attendance.late}</p>
-                    <p className="text-xs text-gray-500">Days</p>
-                  </div>
-                </div>
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div
+                              className="bg-green-500 h-3 rounded-full"
+                              style={{ width: `${(feeInfo.paidAmount / feeInfo.tuitionFee) * 100}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-center mt-2 text-gray-500">
+                            {Math.round((feeInfo.paidAmount / feeInfo.tuitionFee) * 100)}% of tuition paid
+                          </p>
               </div>
+                      )}
             </div>
 
-            <div>
               {/* Upcoming Assignments */}
               <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-medium text-gray-800">Upcoming Assignments</h3>
-                  <button className="text-sm text-purple-600 hover:text-purple-800">View All</button>
+                        <button 
+                          onClick={() => navigate(`/parent/assignments/${selectedChild.id}`)}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          View All
+                        </button>
                 </div>
                 <div className="space-y-3">
-                  {activeChildData.upcomingAssignments.map((assignment) => (
-                    <div key={assignment.id} className="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                      <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 mr-3">
+                        {childAssignments.map((assignment) => (
+                          <div
+                            key={assignment.id}
+                            className="flex items-start border-b border-gray-100 pb-3 last:border-0 last:pb-0"
+                          >
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${
+                              assignment.status === 'Submitted' 
+                                ? 'bg-green-100 text-green-600' 
+                                : 'bg-amber-100 text-amber-600'
+                            }`}>
                         <FileText className="h-4 w-4" />
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-800">{assignment.title}</p>
-                        <p className="text-xs text-gray-500 mt-1">{assignment.subject} • Due {assignment.due}</p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {assignment.course} • Due {assignment.due}
+                              </p>
+                              <p className={`text-xs mt-1 ${
+                                assignment.status === 'Submitted' 
+                                  ? 'text-green-600' 
+                                  : 'text-amber-600'
+                              }`}>
+                                Status: {assignment.status}
+                              </p>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+                  </div>
+                </div>
 
-              {/* Fee Information */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">Fee Information</h3>
-                  <button className="text-sm text-purple-600 hover:text-purple-800">Payment History</button>
-                </div>
-                <div className="space-y-3">
-                  {fees.map((fee) => (
-                    <div key={fee.id} className="flex items-center justify-between border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{fee.description}</p>
-                        <p className="text-xs text-gray-500">Due: {fee.dueDate}</p>
+                {/* Announcements */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mb-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium text-gray-800">School Announcements</h3>
+                    <button 
+                      onClick={() => navigate('/parent/announcements')}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      View All
+                    </button>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-800">{fee.amount}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          fee.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {fee.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Announcements */}
-              <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mt-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-medium text-gray-800">School Announcements</h3>
-                  <button className="text-sm text-purple-600 hover:text-purple-800">View All</button>
-                </div>
-                <div className="space-y-3">
-                  {announcements.map((announcement) => (
-                    <div key={announcement.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
-                      <div className="flex justify-between items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {announcements.map((announcement) => (
+                      <div key={announcement.id} className="border border-gray-100 rounded-lg p-3 hover:bg-gray-50">
+                        <Bell className="h-5 w-5 text-blue-600 mb-2" />
                         <p className="text-sm font-medium text-gray-800">{announcement.title}</p>
-                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{announcement.date}</p>
+                        <p className="text-xs text-gray-500 mt-1">{announcement.date}</p>
                     </div>
                   ))}
                 </div>
+              </div>
+
+                {/* Today's Schedule */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-medium text-gray-800">{selectedChild.name}'s Schedule Today</h3>
+                    <button
+                      onClick={() => navigate(`/parent/schedule/${selectedChild.id}`)}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Full Calendar
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="border border-gray-100 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500">9:00 - 10:30 AM</span>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Current</span>
+                      </div>
+                      <h4 className="font-medium text-gray-800">Mathematics</h4>
+                      <p className="text-xs text-gray-500 mt-1">Room 102 • Ms. Johnson</p>
+                    </div>
+                    <div className="border border-gray-100 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500">10:45 - 12:15 PM</span>
+                      </div>
+                      <h4 className="font-medium text-gray-800">History</h4>
+                      <p className="text-xs text-gray-500 mt-1">Room 205 • Mr. Wilson</p>
+                </div>
+                    <div className="border border-gray-100 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500">1:00 - 2:30 PM</span>
+                      </div>
+                      <h4 className="font-medium text-gray-800">English</h4>
+                      <p className="text-xs text-gray-500 mt-1">Room 301 • Mrs. Davis</p>
+                    </div>
+                    <div className="border border-gray-100 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-gray-500">2:45 - 4:15 PM</span>
+                </div>
+                      <h4 className="font-medium text-gray-800">Science</h4>
+                      <p className="text-xs text-gray-500 mt-1">Lab 3 • Mr. Smith</p>
               </div>
             </div>
           </div>
+              </>
+            )}
         </main>
       </div>
     </div>
+    </Layout>
   );
 };
 

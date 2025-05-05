@@ -1,312 +1,169 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Save } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Container,
-  Heading,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Button,
-  Select,
-  FormControl,
-  FormLabel,
-  Input,
-  VStack,
-  useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  useDisclosure,
-  Text,
-  Flex,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
-  HStack,
-  NumberInput,
-  NumberInputField,
-  Textarea
-} from '@chakra-ui/react';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import Layout from '../../components/layoutes/teacherlayout';
 import authAxios from '../../utils/auth';
-
+import { getUserData } from '../../utils/auth';
 const ExamResults = () => {
   const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const [exams, setExams] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [selectedExam, setSelectedExam] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-
-  // Fetch exams for teacher
+  const userData = getUserData();
   const fetchExams = async () => {
     try {
+      setLoading(true);
+  
+      // Get all exams relevant to the teacher
       const response = await authAxios.get('/exams/teacher');
-      setExams(response.data.data);
-    } catch (error) {
-      toast({
-        title: 'Error fetching exams',
-        description: error.response?.data?.message || 'Something went wrong',
-        status: 'error',
-        duration: 3000,
-        isClosable: true
+      const examsData = response.data?.data || [];
+  
+      // Get all timetables for this teacher
+      const timetableRes = await authAxios.get(`timetables/teacher/${userData.id}`);
+      const timetables = timetableRes.data?.data || [];
+  
+      // Extract unique class IDs from the teacher's timetable
+      const classIds = [...new Set(timetables.map(t => t.class._id))];
+  
+      // Get all classes to use full class info if needed (not strictly required here)
+      const classesRes = await authAxios.get('classes');
+      const allClasses = classesRes.data?.data || [];
+      console.log("All classes:", allClasses);
+  
+      // Filter only the classes assigned to this teacher
+      const filteredClasses = allClasses.filter(cls => classIds.includes(cls._id));
+      const teacherClassIds = filteredClasses.map(cls => cls._id);
+      console.log("Teacher classes:", teacherClassIds); 
+  
+      // Validate and filter exams
+      const validExams = examsData.filter(exam => {
+        const isValid = exam && exam._id && exam.name && exam.type && Array.isArray(exam.classSubjects);
+        if (!isValid) {
+          console.warn('Found invalid exam object:', exam);
+        }
+        return isValid;
       });
+  
+      // Now filter exams that include any of the teacher's classes
+      const filteredExams = validExams.filter(exam =>
+        exam.classSubjects.some(cs => teacherClassIds.includes(cs.class?._id))
+      );
+  
+      console.log('Filtered exams for teacher:', filteredExams);
+      setExams(filteredExams);
+  
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      alert('Failed to fetch exams');
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Fetch students for selected exam's class
-  const fetchStudents = async (examId) => {
-    try {
-      const exam = exams.find(e => e._id === examId);
-      if (!exam) return;
-
-      const response = await authAxios.get('/students?class=' + exam.class._id);
-      setStudents(response.data.data);
-      
-      // Initialize results array with all students
-      const initialResults = response.data.data.map(student => ({
-        student: student._id,
-        subjectResults: exam.subjects.map(subject => ({
-          subject: subject._id,
-          marksObtained: '',
-          remarks: ''
-        }))
-      }));
-      setResults(initialResults);
-    } catch (error) {
-      toast({
-        title: 'Error fetching students',
-        description: error.response?.data?.message || 'Something went wrong',
-        status: 'error',
-        duration: 3000,
-        isClosable: true
-      });
-    }
-  };
+  
+  useEffect(() => {
+    fetchExams();
+  }, []);
+  ;
+  
 
   useEffect(() => {
     fetchExams();
   }, []);
 
   const handleExamSelect = (examId) => {
-    setSelectedExam(exams.find(e => e._id === examId));
-    fetchStudents(examId);
-    onOpen();
-  };
-
-  const handleMarksChange = (studentIndex, subjectIndex, value) => {
-    const newResults = [...results];
-    newResults[studentIndex].subjectResults[subjectIndex].marksObtained = value;
-    setResults(newResults);
-  };
-
-  const handleRemarksChange = (studentIndex, subjectIndex, value) => {
-    const newResults = [...results];
-    newResults[studentIndex].subjectResults[subjectIndex].remarks = value;
-    setResults(newResults);
-  };
-
-  const handleSubmit = async () => {
-    if (!selectedExam) return;
-
-    setLoading(true);
-    try {
-      // Validate marks
-      const validationError = results.some(result =>
-        result.subjectResults.some(sr =>
-          sr.marksObtained === '' || 
-          sr.marksObtained < 0 || 
-          sr.marksObtained > selectedExam.totalMarks
-        )
-      );
-
-      if (validationError) {
-        throw new Error('Please enter valid marks for all students');
-      }
-
-      await authAxios.post('/exams/' + selectedExam._id + '/results', {
-        results: results
-      });
-
-      toast({
-        title: 'Success',
-        description: 'Exam results submitted successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true
-      });
-      onClose();
-    } catch (error) {
-      toast({
-        title: 'Error submitting results',
-        description: error.message || 'Something went wrong',
-        status: 'error',
-        duration: 3000,
-        isClosable: true
-      });
-    } finally {
-      setLoading(false);
-    }
+    // Navigate to the dedicated page for entering results
+    navigate(`/teacher-exams/${examId}/results`);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Upcoming': return 'blue';
-      case 'Ongoing': return 'green';
-      case 'Completed': return 'purple';
-      case 'Cancelled': return 'red';
-      default: return 'gray';
+      case 'Upcoming': return 'bg-blue-100 text-blue-800';
+      case 'Ongoing': return 'bg-green-100 text-green-800';
+      case 'Completed': return 'bg-purple-100 text-purple-800';
+      case 'Cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="p-6 max-w-7xl mx-auto">
+        <Link to="/teacher-exams/add" className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:bg-gray-300">
+          Add Result
+        </Link>
         <div className="flex items-center gap-3 mb-6">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full">
             <ArrowLeft className="h-6 w-6" />
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">Enter Exam Results</h1>
+          <h1 className="text-2xl font-bold">Enter Exam Results</h1>
         </div>
-        <div className="space-y-6">
-          <Table variant="simple">
-            <Thead>
-              <Tr>
-                <Th>Name</Th>
-                <Th>Type</Th>
-                <Th>Class</Th>
-                <Th>Date</Th>
-                <Th>Status</Th>
-                <Th>Actions</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {exams.map((exam) => (
-                <Tr key={exam._id}>
-                  <Td>{exam.name}</Td>
-                  <Td>{exam.type}</Td>
-                  <Td>{exam.class.name}</Td>
-                  <Td>
-                    {format(new Date(exam.startDate), 'dd/MM/yyyy')} -{' '}
-                    {format(new Date(exam.endDate), 'dd/MM/yyyy')}
-                  </Td>
-                  <Td>
-                    <Badge colorScheme={getStatusColor(exam.status)}>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+          </div>
+        ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white border border-gray-200">
+            <thead className="bg-gray-100 text-gray-600">
+              <tr>
+                <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-left">Type</th>
+                <th className="p-3 text-left">Class</th>
+                <th className="p-3 text-left">Date</th>
+                <th className="p-3 text-left">Status</th>
+                <th className="p-3 text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+                {exams.length > 0 ? (
+                  exams.map((exam) => (
+                <tr key={exam._id} className="border-t">
+                  <td className="p-3">{exam.name}</td>
+                  <td className="p-3">{exam.type}</td>
+                  <td className="p-3">
+                    {exam.classSubjects && exam.classSubjects.length > 0 
+                      ? (
+                        <div>
+                          {exam.classSubjects.map((cs, index) => (
+                            <span key={index} className="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded mr-1 mb-1">
+                              {cs.class && cs.class.name ? cs.class.name : 'Unknown'}
+                            </span>
+                          ))}
+                        </div>
+                      ) 
+                      : 'N/A'}
+                  </td>
+                  <td className="p-3">
+                    {format(new Date(exam.startDate), 'dd/MM/yyyy')} - {format(new Date(exam.endDate), 'dd/MM/yyyy')}
+                  </td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(exam.status)}`}>
                       {exam.status}
-                    </Badge>
-                  </Td>
-                  <Td>
-                    <Button
-                      colorScheme="blue"
-                      size="sm"
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    <button
                       onClick={() => handleExamSelect(exam._id)}
-                      isDisabled={exam.status === 'Upcoming' || exam.status === 'Cancelled'}
+                      disabled={exam.status === 'Upcoming' || exam.status === 'Cancelled'}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm disabled:bg-gray-300"
                     >
                       Enter Results
-                    </Button>
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </div>
-
-        <Modal isOpen={isOpen} onClose={onClose} size="6xl">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              {selectedExam ? selectedExam.name : ''} Results
-            </ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <VStack spacing={4} align="stretch">
-                {selectedExam && (
-                  <Accordion allowMultiple>
-                    {students.map((student, studentIndex) => (
-                      <AccordionItem key={student._id}>
-                        <h2>
-                          <AccordionButton>
-                            <Box flex="1" textAlign="left">
-                              {student.firstName} {student.lastName} (Roll: {student.rollNumber})
-                            </Box>
-                            <AccordionIcon />
-                          </AccordionButton>
-                        </h2>
-                        <AccordionPanel>
-                          <Table size="sm">
-                            <Thead>
-                              <Tr>
-                                <Th>Subject</Th>
-                                <Th>Marks (Max: {selectedExam.totalMarks})</Th>
-                                <Th>Remarks</Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {selectedExam.subjects.map((subject, subjectIndex) => (
-                                <Tr key={subject._id}>
-                                  <Td>{subject.name}</Td>
-                                  <Td>
-                                    <NumberInput
-                                      max={selectedExam.totalMarks}
-                                      min={0}
-                                      value={results[studentIndex]?.subjectResults[subjectIndex]?.marksObtained}
-                                      onChange={(value) => handleMarksChange(studentIndex, subjectIndex, value)}
-                                    >
-                                      <NumberInputField />
-                                    </NumberInput>
-                                  </Td>
-                                  <Td>
-                                    <Input
-                                      placeholder="Optional remarks"
-                                      value={results[studentIndex]?.subjectResults[subjectIndex]?.remarks}
-                                      onChange={(e) => handleRemarksChange(studentIndex, subjectIndex, e.target.value)}
-                                    />
-                                  </Td>
-                                </Tr>
-                              ))}
-                            </Tbody>
-                          </Table>
-                        </AccordionPanel>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
+                    </button>
+                  </td>
+                </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="p-4 text-center text-gray-500">
+                      No exams found
+                            </td>
+                          </tr>
                 )}
-              </VStack>
-            </ModalBody>
-
-            <ModalFooter>
-              <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                colorScheme="blue"
-                onClick={handleSubmit}
-                isLoading={loading}
-                loadingText="Submitting..."
-              >
-                Submit Results
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      </div>
+                      </tbody>
+                    </table>
+          </div>
+        )}
       </div>
     </Layout>
   );

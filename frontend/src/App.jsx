@@ -44,6 +44,7 @@ import Editproduct from './pages/products/EditProduct';
 import Viewproduct from './pages/products/ViewProduct';
 import OrderList from './pages/order/OrderList';
 import OrderDetails from './pages/order/OrderDetails';
+import AcademicCalendar from './pages/admin/AcademicCalendar';
 
 
 import Assignment from './pages/AssignmentManagement/AssignmentManagement';
@@ -54,6 +55,11 @@ import TeacherNotifications from './pages/teacher/TeacherNotifications';
 import Exam from './pages/admin/Exam/exam';
 import AddExam from './pages/admin/Exam/AddExam';
 import EditExam from './pages/admin/Exam/EditExam';
+import ExamResults from './pages/teacher/ExamResults';
+import ExamResultAdd from './pages/admin/Exam/AddResultForm';
+import TeacherExamResultEntry from './pages/teacher/TeacherExamResultEntry';
+import ExamResultsView from './pages/student/ExamResultsView';
+
 // Fee Management
 import FeeList from './pages/fee/FeeList';
 import AddFee from './pages/fee/AddFee';
@@ -69,6 +75,8 @@ import AdminResults from './pages/admin/AdminResults';
 import StudentAssignments from './pages/student/StudentAssignments';
 import StudentSubmissionForm from './pages/student/StudentSubmissionForm';
 import ViewSubmission from './pages/student/ViewSubmission';
+import StudentResults from './pages/student/MyResults';
+import ViewExamResult from './pages/student/ViewExamResult';
 // import Submissions from './pages/Submissions';
 // import SubmissionDetail from './pages/SubmissionDetail';
 // import StudentSubmission from './pages/StudentSubmission';
@@ -77,7 +85,9 @@ import ViewSubmission from './pages/student/ViewSubmission';
 // import AdminTeachers from './pages/admin/AdminTeachers';
 // import AdminTimetable from './pages/admin/AdminTimetable';
 // import TeacherTimetable from './pages/teacher/TeacherTimetable';
-// import TeacherProfile from './pages/teacher/TeacherProfile';
+import TeacherProfile from './pages/TeacherProfile';
+import EditTeacherProfile from './pages/EditTeacherProfile';
+import ChangePassword from './pages/ChangePassword';
 // import ParentChildren from './pages/parent/ParentChildren';
 // import ParentProfile from './pages/parent/ParentProfile';
  import StudentSubjects from './pages/student/MyCourse';
@@ -300,6 +310,9 @@ export default function LandingPage() {
           <Route path="/admin-exams" element={<ProtectedRoute requiredRoles={['admin']}><Exam /></ProtectedRoute>} />
           <Route path="/admin/exams/add" element={<ProtectedRoute requiredRoles={['admin']}><AddExam /></ProtectedRoute>} />
           <Route path="/admin/exams/edit/:id" element={<ProtectedRoute requiredRoles={['admin']}><EditExam /></ProtectedRoute>} />
+          <Route path="/teacher-exams" element={<ProtectedRoute requiredRoles={['teacher']}><ExamResults /></ProtectedRoute>} />
+          <Route path="/teacher-exams/add" element={<ProtectedRoute requiredRoles={['teacher']}><ExamResultAdd /></ProtectedRoute>} />
+          <Route path="/teacher-exams/:examId/results" element={<ProtectedRoute requiredRoles={['teacher']}><TeacherExamResultEntry /></ProtectedRoute>} />
         
          {/* admin results */}
          <Route path="/admin-results" element={<ProtectedRoute requiredRoles={['admin']}><AdminResults /></ProtectedRoute>} />
@@ -345,6 +358,8 @@ export default function LandingPage() {
           {/* <Route path="/student/exam" element={<StudentExam/>} /> */}
           {/* <Route path="/student/result" element={<StudentResult/>} />
           <Route path="/student/fees" element={<StudentFees/>} /> */}
+          <Route path="/student/results" element={<StudentResults />} />
+          <Route path="/student/exam-results/:examId" element={<ExamResultsView />} />
           {/* <Route path="/student/notification" element={<StudentNotification/>} /> */}
           {/* <Route path="/student/leave" element={<StudentLeave/>} /> */}
           <Route path="/student/assignments" element={<StudentAssignments />} />
@@ -388,6 +403,22 @@ export default function LandingPage() {
     <ViewTeacherAttendance />
   </ProtectedRoute>
 } />
+
+          {/* Academic Calendar Management */}
+          <Route path="/admin-calendar" element={
+            <ProtectedRoute requiredRoles={['admin']}>
+              <AcademicCalendar/>
+            </ProtectedRoute>
+          } />
+
+          {/* Teacher routes */}
+          <Route element={<ProtectedRoute roles={["teacher"]} />}>
+            <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+            <Route path="/teacher/profile" element={<TeacherProfile />} />
+            <Route path="/teacher/profile/edit" element={<EditTeacherProfile />} />
+            <Route path="/teacher/change-password" element={<ChangePassword />} />
+            {/* Add more teacher routes here */}
+          </Route>
         </Routes>
       </Router>
    

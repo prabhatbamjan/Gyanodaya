@@ -54,51 +54,57 @@ exports.getProductById = async (req, res) => {
 // Create new product
 exports.createProduct = async (req, res) => {
     try {
-        const data = req.body;
-        const imagePath = req.file?.path;
-
-        if (!imagePath) {
-            return res.status(400).json({ success: false, message: 'Image file is required' });
+      const data = req.body;
+      const imagePath = req.file?.path;
+  
+      if (!imagePath) {
+        return res.status(400).json({ success: false, message: 'Image file is required' });
+      }
+  
+      // Validate required fields
+      const requiredFields = ['name', 'description', 'sellingprice', 'costprice', 'category', 'stock'];
+      for (let field of requiredFields) {
+        if (!data[field]) {
+          return res.status(400).json({ success: false, message: `Missing field: ${field}` });
         }
-
-        // Validate required fields
-        const requiredFields = ['name', 'description', 'sellingprice', 'costprice', 'category', 'stock'];
-        for (let field of requiredFields) {
-            if (!data[field]) {
-                return res.status(400).json({ success: false, message: `Missing field: ${field}` });
-            }
-        }
-
-        if (data.sellingprice < 0 || data.costprice < 0 || data.stock < 0) {
-            return res.status(400).json({ success: false, message: 'Prices and stock cannot be negative' });
-        }
-
-        // Upload to Cloudinary
-        const result = await Cloudinary.uploader.upload(imagePath, { folder: 'Products' });
-        fs.unlinkSync(imagePath); // delete local file
-
-        const product = await Product.create({
-            name: data.name,
-            description: data.description,
-            sellingPrice: data.sellingprice,
-            costPrice: data.costprice,
-            category: data.category,
-            stock: data.stock,
-            status: data.status || 'available',
-            image: result,
-            createdBy: req.user?._id
-        });
-
-        const populatedProduct = await Product.findById(product._id)
-            .populate('createdBy', 'firstName lastName');
-
-        res.status(201).json({ success: true, data: populatedProduct });
+      }
+  
+      if (data.sellingprice < 0 || data.costprice < 0 || data.stock < 0) {
+        return res.status(400).json({ success: false, message: 'Prices and stock cannot be negative' });
+      }
+  
+      // Declare result in outer scope
+      let result;
+      try {
+        result = await Cloudinary.uploader.upload(imagePath, { folder: 'Products' });
+        fs.unlinkSync(imagePath); // delete local image
+      } catch (err) {
+        console.error('Cloudinary Upload Error:', err);
+        return res.status(500).json({ success: false, message: 'Cloudinary upload failed', error: err.message });
+      }
+  
+      const product = await Product.create({
+        name: data.name,
+        description: data.description,
+        sellingPrice: data.sellingprice,
+        costPrice: data.costprice,
+        category: data.category,
+        stock: data.stock,
+        status: data.status || 'available',
+        image: result,
+        createdBy: req.user?._id
+      });
+  
+      const populatedProduct = await Product.findById(product._id)
+        .populate('createdBy', 'firstName lastName');
+  
+      res.status(201).json({ success: true, data: populatedProduct });
     } catch (error) {
-        console.error('Error creating product:', error);
-        res.status(500).json({ success: false, message: 'Failed to create product', error: error.message });
+      console.error('Error creating product:', error);
+      res.status(500).json({ success: false, message: 'Failed to create product', error: error.message });
     }
-};
-
+  };
+  
 // Update product
 exports.updateProduct = async (req, res) => {
     try {

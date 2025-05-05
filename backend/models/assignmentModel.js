@@ -13,6 +13,10 @@ const attachmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  url: {
+    type: String,
+    required: true
+  },
   size: Number,
   mimetype: String,
   uploadedAt: {
@@ -58,6 +62,11 @@ const assignmentSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Total marks is required'],
     min: [1, 'Total marks must be at least 1']
+  },
+  status: {
+    type: String,
+    enum: ['upcoming', 'ongoing', 'completed'],
+    default: 'upcoming'
   },
   attachments: [attachmentSchema],
   isDraft: {

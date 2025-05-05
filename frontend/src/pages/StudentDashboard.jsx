@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link,useNavigate } from "react-router-dom";
 import {
   Bell,
   Clock,
@@ -7,17 +7,14 @@ import {
   Menu,
 } from "lucide-react";
 import Layout from "../components/layoutes/studentlayout";
-import { logout } from "../utils/auth";
+import {getUserData, logout } from "../utils/auth";
 
 const StudentDashboard = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Math homework due tomorrow", time: "10 min ago" },
-    { id: 2, text: "Science project feedback available", time: "2 hours ago" },
-    { id: 3, text: "School trip forms due Friday", time: "Yesterday" },
-  ]);
+  const [notifications, setNotifications] = useState([ ]);
   const navigate = useNavigate();
+  const userData = getUserData();
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -61,31 +58,13 @@ const StudentDashboard = () => {
     <Layout>
       <div className="flex min-h-screen bg-gray-50">
         <div className="flex-1">
-          {/* Header */}
-          <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sticky top-0 z-20">
-            <button onClick={toggleSidebar} className="text-gray-500 hover:text-gray-700 focus:outline-none md:hidden">
-              <Menu className="h-5 w-5" />
-            </button>
-            <div className="ml-4 flex-1 flex justify-between items-center">
-              <h1 className="text-xl font-semibold text-blue-700">Student Dashboard</h1>
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1 right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                      {notifications.length}
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </header>
+       
 
           {/* Main Content */}
           <main className="p-4 md:p-6">
             {/* Welcome Banner */}
             <div className="mb-6 bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-lg p-4 md:p-6 text-white">
-              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome Back, John!</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-2">Welcome Back </h2>
               <p className="opacity-90 mb-4">
                 You have {upcomingAssignments.length} upcoming assignments and {courses.length} active courses.
               </p>
@@ -96,9 +75,17 @@ const StudentDashboard = () => {
                 >
                   View Assignments
                 </button>
+                <button
+                  onClick={() => navigate('/student/results')}
+                  className="bg-white text-blue-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  View Results
+                </button>
+                <Link to="/student/schedule">
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium border border-blue-400 hover:bg-blue-700 transition-colors">
                   Check Schedule
                 </button>
+                </Link>
               </div>
             </div>
 

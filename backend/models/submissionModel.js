@@ -13,6 +13,10 @@ const attachmentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  url: {
+    type: String,
+    required: true
+  },
   size: Number,
   mimetype: String,
   uploadedAt: {

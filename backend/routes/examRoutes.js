@@ -8,15 +8,23 @@ const {
   deleteExam,
   getTeacherExams,
   submitExamResults,
-  getExamResults
+  getExamResults,
+  getExamByClass
 } = require('../controllers/examController');
+
 const authController = require('../middleware/auth');
 
 // Protect all routes
 router.use(authController.protect);
 
-// Admin routes
+// Teacher-specific
+router.get('/teacher', getTeacherExams);
+router.post('/:examId/results', submitExamResults);
 
+// Common
+router.get('/:examId/results', getExamResults);
+
+// Admin
 router.route('/')
   .post(createExam)
   .get(getAllExams);
@@ -26,11 +34,7 @@ router.route('/:id')
   .put(updateExam)
   .delete(deleteExam);
 
-// Teacher routes
-router.get('/teacher', getTeacherExams);
-router.post('/:examId/results', submitExamResults);
-
-// Common routes (accessible by admin and teachers)
-router.get('/:examId/results', getExamResults);
+router.route('/class/:classId')
+  .get(getExamByClass);
 
 module.exports = router;

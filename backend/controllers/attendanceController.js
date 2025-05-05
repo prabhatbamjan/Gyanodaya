@@ -578,3 +578,66 @@ exports.getStudentAttendance = async (req, res) => {
         });
     }
 };
+
+exports.getAttendanceRate = async (req, res) => {
+    try {
+        // 1. Get total number of students
+        const totalStudents = await Student.countDocuments();
+        console.log(totalStudents)
+        
+        // 2. Get total school days (unique dates with attendance records)
+        const schoolDays = await Attendance.distinct('date');
+        const totalSchoolDays = schoolDays.length;
+
+        // 3. Check for valid data
+        if (totalStudents === 0 || totalSchoolDays === 0) {
+            return res.status(200).json({
+                attendanceRate: 0,
+                message: 'Insufficient data to calculate attendance rate'
+            });
+        }
+
+        // 4. Calculate total possible attendance slots
+        const totalPossibleSlots = totalStudents * totalSchoolDays;
+
+        // 5. Aggregate total present attendance records
+        const presentCountResult = await Attendance.aggregate([
+            { $unwind: '$records' },
+            { 
+                $group: {
+                    _id: null,
+                    totalPresent: { 
+                        $sum: {
+                            $cond: [{ $eq: ['$records.status', 'present'] }, 1, 0]
+                        }
+                    }
+                }
+            }
+        ]);
+
+        const totalPresent = presentCountResult[0]?.totalPresent || 0;
+
+        // 6. Calculate attendance rate
+        const attendanceRate = (totalPresent / totalPossibleSlots) * 100;
+
+        res.status(200).json({
+            success: true,
+            attendanceRate: attendanceRate.toFixed(2),
+            statistics: {
+                totalStudents,
+                totalSchoolDays,
+                totalPossibleSlots,
+                totalPresent,
+                totalAbsent: totalPossibleSlots - totalPresent
+            }
+        });
+
+    } catch (error) {
+        console.error('Error calculating attendance rate:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while calculating attendance rate',
+            error: error.message
+        });
+    }
+};

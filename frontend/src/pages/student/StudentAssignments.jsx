@@ -109,11 +109,15 @@ const StudentAssignments = () => {
 
   const getSubmissionStatus = (assignment) => {
     const submission = submissions[assignment._id];
+    const now = new Date();
+    const dueDate = new Date(assignment.dueDate);
+    const isPastDue = now > dueDate;
+
     if (!submission) {
       return {
-        status: "Not Submitted",
-        color: "gray",
-        showSubmit: true
+        status: isPastDue ? "Overdue" : "Not Submitted",
+        color: isPastDue ? "red" : "gray",
+        showSubmit: !isPastDue
       };
     }
 
@@ -162,7 +166,7 @@ const StudentAssignments = () => {
     <Layout>
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">My Assignments</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Assignments </h1>
           <p className="mt-1 text-sm text-gray-500">
             View and submit your class assignments
           </p>
@@ -274,6 +278,8 @@ const StudentAssignments = () => {
                             ? "bg-yellow-100 text-yellow-600"
                             : submissionStatus.color === "blue"
                             ? "bg-blue-100 text-blue-600"
+                            : submissionStatus.color === "red"
+                            ? "bg-red-100 text-red-600"
                             : "bg-gray-100 text-gray-600"
                         }`}
                       >
@@ -298,6 +304,8 @@ const StudentAssignments = () => {
                               ? "bg-yellow-100 text-yellow-800"
                               : submissionStatus.color === "blue"
                               ? "bg-blue-100 text-blue-800"
+                              : submissionStatus.color === "red"
+                              ? "bg-red-100 text-red-800"
                               : "bg-gray-100 text-gray-800"
                           }`}
                         >
@@ -393,7 +401,7 @@ const StudentAssignments = () => {
 
                         {!submissionStatus.showSubmit && (
                           <Link
-                            to={`/student/assignments/view-submission/${assignment._id}`}
+                            to={`/student/assignments/submit/${assignment._id}`}
                             className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -414,4 +422,4 @@ const StudentAssignments = () => {
   );
 };
 
-export default StudentAssignments; 
+export default StudentAssignments;

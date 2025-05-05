@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, ArrowLeft, Loader2 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
-import authAxios from '../utils/auth';
+import authAxios, { isValidPassword } from '../utils/auth';
 
 
 function ForgotPassword() {
@@ -28,7 +28,8 @@ function ForgotPassword() {
     setIsLoading(true);
     setError('');
 
-    console.log("Sending email:", formData.email); // Debugging
+ 
+
 
     try {
       await authAxios.post('users/forgotPassword', {
@@ -68,8 +69,13 @@ function ForgotPassword() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
-    console.log("Resetting password for:", formData.email); // Debugging
+  const validation = isValidPassword(formData.newPassword);
+  if (!validation.valid) {
+    setError(validation.message);
+    setIsLoading(false);
+    return;
+  }
+ 
 
     try {
       await authAxios.post('users/resetPassword', {
@@ -85,6 +91,7 @@ function ForgotPassword() {
       setIsLoading(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -14,7 +14,7 @@ function EditClass() {
     section: '',
     roomNumber: '',
     fee: '',
-    academicYear: '',
+    academicYear: new Date().getFullYear(),
     subjects: [],
     classTeacher: '',
   });
@@ -266,8 +266,8 @@ function EditClass() {
                 value={formData.academicYear}
                 onChange={handleInputChange}
                 className="w-full border rounded px-3 py-2"
-                min="2000"
-                max="2200"
+                min={new Date().getFullYear()}
+                
                 required
               />
             </div>

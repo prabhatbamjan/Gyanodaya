@@ -21,14 +21,20 @@ function AdminClasses() {
     const fetchClasses = async () => {
       setIsLoading(true);
       try {
-        const response = await authAxios.get(`teachers/${userdata.id}`);       
-        console.log(response.data.data);
-  
-        const response2 = await authAxios.get(`classes`);
-  
-        const classIds = response.data.data.class; // corrected here
-        const filteredClasses = response2.data.data.filter((cls) => classIds.includes(cls._id));
-  
+        // Fetch timetables for the teacher
+        const timetableRes = await authAxios.get(`timetables/teacher/${userdata.id}`);
+        const timetables = timetableRes.data.data;
+    
+        // Extract unique class IDs from the timetables
+        const classIds = [...new Set(timetables.map(t => t.class._id))];
+    
+        // Fetch all classes
+        const classesRes = await authAxios.get(`classes`);
+        const allClasses = classesRes.data.data;
+    
+        // Filter only classes that match the teacher's timetable
+        const filteredClasses = allClasses.filter(cls => classIds.includes(cls._id));
+    
         setClasses(filteredClasses);
         setError(null);
       } catch (err) {
@@ -38,11 +44,9 @@ function AdminClasses() {
         setIsLoading(false);
       }
     };
-  
+    
     fetchClasses();
   }, []);
-  
-  
 
  const filteredClasses = classes.filter(cls => {
   const searchLower = searchTerm.toLowerCase();
